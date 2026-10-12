@@ -75,7 +75,7 @@ class AccountCommands(commands.GroupCog, group_name="account"):
 
         embed = discord.Embed(
             title=f"📋 Danh Sách Tài Khoản Của {interaction.user.display_name}",
-            description="Các tài khoản đã liên kết trong hệ thống HoyoBot:",
+            description="Các tài khoản đã liên kết trong hệ thống Maple Leaf:",
             color=0x3498DB,
         )
 

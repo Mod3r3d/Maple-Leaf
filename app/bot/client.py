@@ -1,4 +1,4 @@
-"""Lớp Client chính của Discord Bot (HoyoBot)."""
+"""Lớp Client chính của Discord Bot (Maple Leaf)."""
 
 from typing import List
 import discord
@@ -26,7 +26,7 @@ EXTENSIONS: List[str] = [
 ]
 
 
-class HoyoBot(commands.Bot):
+class MapleLeaf(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         super().__init__(
@@ -67,6 +67,6 @@ class HoyoBot(commands.Bot):
         logger.info(f"Bot đã đăng nhập thành công với tên: {self.user} (ID: {self.user.id if self.user else 'N/A'})")
         activity = discord.Activity(
             type=discord.ActivityType.watching,
-            name="/auto & /help • HoyoBot",
+            name="/auto & /help • Maple Leaf",
         )
         await self.change_presence(status=discord.Status.online, activity=activity)

@@ -1,4 +1,4 @@
-# Dependency trực tiếp của HoyoBot (nguồn để sinh requirements.txt).
+# Dependency trực tiếp của Maple Leaf (nguồn để sinh requirements.txt).
 #
 # File này CHỈ khai báo các thư viện dùng trực tiếp, với dải phiên bản tối thiểu
 # để dễ nâng cấp. requirements.txt là bản đã ghim cứng (đã kiểm thử) dùng để cài đặt.

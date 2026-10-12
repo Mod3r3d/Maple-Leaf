@@ -2,7 +2,7 @@
 
 ## 1. Kết Quả Audit Hệ Thống Hiện Tại
 - **Ngôn ngữ & Framework**: Python 3.12, `discord.py` v2.7, `pydantic` v2, `aiosqlite`.
-- **Cơ sở dữ liệu**: SQLite async (`data/hoyobot.db`) với các bảng: `users`, `accounts`, `settings`.
+- **Cơ sở dữ liệu**: SQLite async (`data/mapleleaf.db`) với các bảng: `users`, `accounts`, `settings`.
 - **Tựa game**: Hỗ trợ độc quyền 2 game **Genshin Impact** và **Honkai: Star Rail**.
 - **Public Data**: Enka.Network API client đã có sẵn caching, timeout và error translation tiếng Việt.
 - **Tiêu chí v2**:

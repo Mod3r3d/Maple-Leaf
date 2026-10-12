@@ -7,7 +7,6 @@ from app.automation.tasks.checkin_task import DailyCheckinTask
 from app.automation.tasks.giftcode_tasks import GiftcodeDiscoveryTask, GiftcodeRedeemTask
 from app.automation.tasks.web_event_task import WebEventMonitorTask
 from app.config import settings
-from app.db.database import db
 from app.db.repositories.accounts import AccountRepository
 from app.db.repositories.automation import (
     AutomationLogRepository,
@@ -19,6 +18,7 @@ from app.db.repositories.automation import (
 )
 from app.games.enums import GameType, ServerRegion
 from app.security.encryption import cipher, mask_cookie
+from tests.db_test_utils import TempDatabaseMixin
 
 
 class TestSecurityAndEncryption(unittest.TestCase):
@@ -111,31 +111,14 @@ class TestSecurityAndEncryption(unittest.TestCase):
         self.assertEqual(len(info4["missing_for_redeem"]), 0)
 
 
-class TestAutomationDatabase(unittest.IsolatedAsyncioTestCase):
+class TestAutomationDatabase(TempDatabaseMixin, unittest.IsolatedAsyncioTestCase):
     TEST_USER_ID = 888777666
 
     async def asyncSetUp(self):
-        await db.connect()
-        # Dọn dẹp dữ liệu test
-        async with db.get_connection() as conn:
-            await conn.execute("DELETE FROM sessions WHERE discord_user_id = ?", (self.TEST_USER_ID,))
-            await conn.execute("DELETE FROM accounts WHERE discord_user_id = ?", (self.TEST_USER_ID,))
-            await conn.execute("DELETE FROM users WHERE discord_user_id = ?", (self.TEST_USER_ID,))
-            await conn.execute("DELETE FROM gift_codes WHERE code = 'TESTCODE2026'")
-            await conn.execute("DELETE FROM giftcode_redemptions WHERE code = 'TESTCODE2026'")
-            await conn.execute("DELETE FROM web_events WHERE external_id = 'test_event_1'")
-            await conn.commit()
+        await self._open_temp_db()
 
     async def asyncTearDown(self):
-        async with db.get_connection() as conn:
-            await conn.execute("DELETE FROM sessions WHERE discord_user_id = ?", (self.TEST_USER_ID,))
-            await conn.execute("DELETE FROM accounts WHERE discord_user_id = ?", (self.TEST_USER_ID,))
-            await conn.execute("DELETE FROM users WHERE discord_user_id = ?", (self.TEST_USER_ID,))
-            await conn.execute("DELETE FROM gift_codes WHERE code = 'TESTCODE2026'")
-            await conn.execute("DELETE FROM giftcode_redemptions WHERE code = 'TESTCODE2026'")
-            await conn.execute("DELETE FROM web_events WHERE external_id = 'test_event_1'")
-            await conn.commit()
-        await db.close()
+        await self._close_temp_db()
 
     async def test_session_lifecycle(self):
         # 1. Lưu session
@@ -228,18 +211,14 @@ class TestAutomationDatabase(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(is_new2)
 
 
-class TestAutomationTasksAndScheduler(unittest.IsolatedAsyncioTestCase):
+class TestAutomationTasksAndScheduler(TempDatabaseMixin, unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        await db.connect()
+        await self._open_temp_db()
         settings.AUTOMATION_MODE = "dry-run"
 
     async def asyncTearDown(self):
         settings.AUTOMATION_MODE = "live"
-        async with db.get_connection() as conn:
-            await conn.execute("DELETE FROM giftcode_redemptions WHERE response_msg LIKE '%DRY-RUN%'")
-            await conn.execute("DELETE FROM checkin_executions WHERE reward_summary LIKE '%DRY-RUN%'")
-            await conn.commit()
-        await db.close()
+        await self._close_temp_db()
 
     async def test_checkin_task_dry_run(self):
         task = DailyCheckinTask(GameType.GENSHIN)
@@ -293,12 +272,12 @@ class TestHoyoClientAdapter(unittest.TestCase):
         self.assertEqual(to_genshin_game(GameType.HSR), genshin.Game.STARRAIL)
 
 
-class TestPersistentQueueAndRedeemService(unittest.IsolatedAsyncioTestCase):
+class TestPersistentQueueAndRedeemService(TempDatabaseMixin, unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        await db.connect()
+        await self._open_temp_db()
 
     async def asyncTearDown(self):
-        await db.close()
+        await self._close_temp_db()
 
     async def test_queue_lifecycle(self):
         from app.db.repositories.automation import RedemptionJobRepository

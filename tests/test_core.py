@@ -1,9 +1,8 @@
-"""Bộ kiểm thử đơn vị tự động cho HoyoBot."""
+"""Bộ kiểm thử đơn vị tự động cho Maple Leaf."""
 
 import asyncio
 import io
 import unittest
-from app.db.database import db
 from app.db.models.account import AccountModel
 from app.db.repositories.accounts import AccountRepository
 from app.db.repositories.settings import SettingsRepository
@@ -19,6 +18,7 @@ from app.services.account_service import account_service
 from app.services.build_service import build_service
 from app.services.search_service import search_service
 from app.utils.validators import detect_server, mask_uid, validate_uid
+from tests.db_test_utils import TempDatabaseMixin
 
 
 class TestValidators(unittest.TestCase):
@@ -66,18 +66,12 @@ class TestValidators(unittest.TestCase):
         self.assertEqual(mask_uid(812345678, show=True), "812345678")
 
 
-class TestDatabaseAndAccounts(unittest.IsolatedAsyncioTestCase):
+class TestDatabaseAndAccounts(TempDatabaseMixin, unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        await db.connect()
-        await db.conn.execute("DELETE FROM accounts WHERE discord_user_id = 999888777")
-        await db.conn.execute("DELETE FROM users WHERE discord_user_id = 999888777")
-        await db.conn.commit()
+        await self._open_temp_db()
 
     async def asyncTearDown(self):
-        await db.conn.execute("DELETE FROM accounts WHERE discord_user_id = 999888777")
-        await db.conn.execute("DELETE FROM users WHERE discord_user_id = 999888777")
-        await db.conn.commit()
-        await db.close()
+        await self._close_temp_db()
 
     async def test_account_lifecycle(self):
         discord_id = 999888777

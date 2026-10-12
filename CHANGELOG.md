@@ -23,6 +23,11 @@ phiên bản theo [Semantic Versioning](https://semver.org/lang/vi/).
   `pyproject.toml`, `requirements-dev.txt`.
 
 ### Changed
+- **Đổi tên dự án:** Chính thức đổi tên bot và dự án thành **Maple Leaf** — áp dụng nhất quán cho
+  tên class (`MapleLeaf`), CSDL (`data/mapleleaf.db`), file log (`logs/mapleleaf.log`), tài liệu,
+  link clone và cấu hình Docker.
+- **Test dùng CSDL tạm:** bộ kiểm thử nay chạy trên file CSDL tạm (`tests/db_test_utils.py`),
+  **không còn ghi vào dữ liệu thật** của người dùng.
 - **Dọn lớp CSDL trùng lặp:** `app/db/database.py` (`SCHEMA_SQL`) là **nguồn sự thật duy nhất**
   cho runtime SQLite. Toàn bộ nhánh PostgreSQL (SQLAlchemy ORM, Alembic, script migrate, migration
   SQL cũ) được chuyển vào `deploy/postgres/` và đánh dấu rõ là **tuỳ chọn, thử nghiệm**.
@@ -32,11 +37,22 @@ phiên bản theo [Semantic Versioning](https://semver.org/lang/vi/).
 ### Fixed
 - **Bảo mật:** gỡ `data/.secret.key` và các file CSDL `*.db-wal` / `*.db-shm` khỏi git và bổ sung
   `.gitignore` — trước đây khoá mã hoá và dữ liệu cookie bị đưa lên repository.
+- **`.env` làm sập bot:** các giá trị màu dạng hex (`0x5BC0BE`) trong `.env` khiến pydantic không
+  parse được và `Settings()` ném lỗi. Đã thêm validator chấp nhận `0xRRGGBB`, `#RRGGBB` và số thập phân.
+- **Khoá mã hoá không khớp làm sập tác vụ:** `SecretCipher.decrypt` nay trả về chuỗi rỗng kèm cảnh
+  báo thay vì ném `InvalidToken`, nhờ đó tác vụ nền không chết khi khoá bị xoay.
 - Redeem Giftcode: tự động làm mới `cookie_token` qua `stoken` rồi thử lại khi gặp lỗi xác thực
   (`InvalidCookies` / retcode `-1071`).
 - Không còn đánh dấu session `EXPIRED` khi chỉ lỗi đổi mã — nhờ đó Điểm danh không bị hỏng theo.
 - Modal `/auto session_add` không còn lỗi `400 Bad Request` do nhãn vượt 45 ký tự.
 - `.env.example` được đồng bộ đầy đủ với `app/config.py`.
+
+### Security
+- **Xoay khoá mã hoá:** khoá Fernet cũ (`data/.secret.key`) từng bị commit lên repository nên đã bị
+  coi là lộ — đã xoá để sinh khoá mới.
+- **Dọn session cũ:** toàn bộ cookie đã lưu bằng khoá cũ đã được xoá; người dùng cần liên kết lại
+  cookie HoYoLAB (`/auto session_add` hoặc `scripts/get_full_cookie.py`).
+- **Khuyến nghị reset Discord Bot Token** (token từng xuất hiện trong log/traceback công khai).
 
 ## [1.0.0] - 2026-10-05
 

@@ -4,7 +4,7 @@ Chỉ dùng khi bạn muốn triển khai bot trên PostgreSQL thay vì SQLite m
 
 Cách sử dụng (chạy từ thư mục gốc dự án):
     python -m deploy.postgres.migrate_sqlite_to_postgres \
-        [--sqlite-path data/hoyobot.db] \
+        [--sqlite-path data/mapleleaf.db] \
         [--pg-url postgresql+asyncpg://user:pass@host:port/dbname]
 """
 
@@ -171,7 +171,7 @@ async def run_migration(sqlite_path: str, pg_url: str):
 
 def main():
     parser = argparse.ArgumentParser(description="Migrate SQLite to PostgreSQL")
-    parser.add_argument("--sqlite-path", default="data/hoyobot.db", help="Đường dẫn file SQLite")
+    parser.add_argument("--sqlite-path", default="data/mapleleaf.db", help="Đường dẫn file SQLite")
     parser.add_argument(
         "--pg-url",
         default=os.environ.get("DATABASE_URL", ""),

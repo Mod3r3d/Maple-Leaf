@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from loguru import logger
 from app.config import settings
 
@@ -44,10 +44,22 @@ class SecretCipher:
         return encrypted_bytes.decode("utf-8")
 
     def decrypt(self, cipher_text: str) -> str:
-        """Giải mã văn bản đã mã hóa."""
+        """Giải mã văn bản đã mã hóa.
+
+        Nếu khoá hiện tại không khớp (ví dụ sau khi xoay khoá) hoặc dữ liệu hỏng,
+        trả về chuỗi rỗng thay vì ném lỗi — nhờ đó các tác vụ nền không bị sập và
+        người dùng chỉ thấy thông báo "chưa liên kết Cookie".
+        """
         if not cipher_text:
             return ""
-        decrypted_bytes = self.cipher.decrypt(cipher_text.encode("utf-8"))
+        try:
+            decrypted_bytes = self.cipher.decrypt(cipher_text.encode("utf-8"))
+        except InvalidToken:
+            logger.warning(
+                "Không giải mã được dữ liệu: khoá mã hoá hiện tại không khớp với dữ liệu đã lưu "
+                "(thường do đã xoay khoá). Dữ liệu này cần được tạo lại."
+            )
+            return ""
         return decrypted_bytes.decode("utf-8")
 
 

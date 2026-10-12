@@ -8,8 +8,8 @@ hay cải thiện tài liệu — đều được hoan nghênh.
 ## 1. Chuẩn bị môi trường
 
 ```bash
-git clone https://github.com/<ten-ban>/hoyoBot.git
-cd hoyoBot
+git clone https://github.com/Mod3r3d/Maple-Leaf.git
+cd Maple-Leaf
 
 # Cách nhanh nhất (tự tạo venv + cài dependency + tạo .env):
 #   Windows:  scripts\setup.bat

@@ -1,9 +1,9 @@
-"""Điểm khởi chạy ứng dụng HoyoBot (Main Entrypoint)."""
+"""Điểm khởi chạy ứng dụng Maple Leaf (Main Entrypoint)."""
 
 import sys
 from loguru import logger
 from app.config import settings
-from app.bot.client import HoyoBot
+from app.bot.client import MapleLeaf
 
 
 def setup_logging():
@@ -22,12 +22,12 @@ def setup_logging():
         "<level>{message}</level>"
     )
     logger.add(sys.stdout, format=log_format, level=settings.LOG_LEVEL, colorize=True)
-    logger.add("logs/hoyobot.log", rotation="10 MB", retention="7 days", format=log_format, level="DEBUG", encoding="utf-8")
+    logger.add("logs/mapleleaf.log", rotation="10 MB", retention="7 days", format=log_format, level="DEBUG", encoding="utf-8")
 
 
 def main():
     setup_logging()
-    logger.info("Đang khởi động HoyoBot (Genshin Impact & Honkai: Star Rail)...")
+    logger.info("Đang khởi động Maple Leaf (Genshin Impact & Honkai: Star Rail)...")
 
     if not settings.DISCORD_TOKEN:
         logger.warning(
@@ -38,7 +38,7 @@ def main():
         )
         return
 
-    bot = HoyoBot()
+    bot = MapleLeaf()
 
     try:
         bot.run(settings.DISCORD_TOKEN, log_handler=None)

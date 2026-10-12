@@ -1,1 +1,1 @@
-"""HoyoBot package."""
+"""Maple Leaf package."""

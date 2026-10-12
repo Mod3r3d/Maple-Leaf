@@ -31,7 +31,7 @@ class NotificationService:
         if fields:
             for name, val, inline in fields:
                 embed.add_field(name=name, value=val, inline=inline)
-        embed.set_footer(text="HoyoBot Automation • Thông báo tự động")
+        embed.set_footer(text="Maple Leaf Automation • Thông báo tự động")
 
         # 1. Thử gửi qua Channel nếu có channel_id
         if channel_id:

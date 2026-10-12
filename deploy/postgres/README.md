@@ -1,7 +1,7 @@
 # Triển khai PostgreSQL (TÙY CHỌN — thử nghiệm)
 
 > ⚠️ **Thư mục này KHÔNG thuộc runtime mặc định.**
-> HoyoBot mặc định chạy với **SQLite** (xem [`app/db/README.md`](../../app/db/README.md)).
+> Maple Leaf mặc định chạy với **SQLite** (xem [`app/db/README.md`](../../app/db/README.md)).
 > Toàn bộ mã trong đây chỉ dùng khi bạn muốn triển khai trên **PostgreSQL**.
 
 ---
@@ -41,7 +41,7 @@ python -m alembic -c deploy/postgres/alembic.ini upgrade head
 
 # 3) Chuyển dữ liệu từ SQLite sang (tuỳ chọn)
 python -m deploy.postgres.migrate_sqlite_to_postgres \
-    --sqlite-path data/hoyobot.db \
+    --sqlite-path data/mapleleaf.db \
     --pg-url postgresql+asyncpg://user:pass@host:5432/dbname
 ```
 

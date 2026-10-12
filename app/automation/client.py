@@ -289,7 +289,7 @@ class HoyoClientAdapter:
         return await _attempt(allow_refresh=True)
 
     # Mã "mồi" chắc chắn không tồn tại, dùng để kiểm tra quyền đổi mã mà KHÔNG đổi thật mã nào.
-    PROBE_CODE = "HOYOBOTVERIFY000000"
+    PROBE_CODE = "MAPLELEAFVERIFY0000"
 
     async def check_cookie_token_valid(self) -> Tuple[bool, str]:
         """Kiểm tra (chỉ đọc) xem `cookie_token` dùng cho đổi mã còn hiệu lực hay không.

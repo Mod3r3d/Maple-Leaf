@@ -63,8 +63,8 @@ The script creates the virtual environment, installs dependencies and creates `.
 ### Option 2 — Manual
 
 ```bash
-git clone https://github.com/<your-username>/hoyoBot.git
-cd hoyoBot
+git clone https://github.com/Mod3r3d/Maple-Leaf.git
+cd Maple-Leaf
 
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
@@ -86,7 +86,7 @@ Everything else has sensible defaults. Full reference:
 | Variable | Default | Description |
 |---|---|---|
 | `DISCORD_TOKEN` | *(required)* | Discord bot token |
-| `DATABASE_PATH` | `data/hoyobot.db` | SQLite database path |
+| `DATABASE_PATH` | `data/mapleleaf.db` | SQLite database path |
 | `DATABASE_URL` | *(empty)* | Use PostgreSQL instead of SQLite |
 | `AUTOMATION_ENABLED` | `True` | Enable/disable the whole background layer |
 | `AUTOMATION_MODE` | `live` | `live` = real API calls, `dry-run` = simulate only |
@@ -148,7 +148,7 @@ CI runs the test suite on Windows and Linux for every push/PR (see [`.github/wor
 ## 📁 Project structure
 
 ```text
-hoyoBot/
+Maple-Leaf/
 ├── app/
 │   ├── main.py              # Entrypoint
 │   ├── config.py            # Settings (pydantic-settings)

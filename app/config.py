@@ -1,7 +1,8 @@
-"""Cấu hình ứng dụng HoyoBot (bao gồm lớp Automation v2)."""
+"""Cấu hình ứng dụng Maple Leaf (bao gồm lớp Automation v2)."""
 
 from pathlib import Path
 from typing import List, Optional
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,7 +20,7 @@ class Settings(BaseSettings):
     DISCORD_TOKEN: str = ""
 
     # Database
-    DATABASE_PATH: str = "data/hoyobot.db"
+    DATABASE_PATH: str = "data/mapleleaf.db"
     DATABASE_URL: Optional[str] = None
 
     # Debug & Logging
@@ -68,6 +69,28 @@ class Settings(BaseSettings):
     #   GENSHIN_EMOJI=<:genshin_icon:1556606822314672142>
     GENSHIN_EMOJI: str = ""
     HSR_EMOJI: str = ""
+
+    @field_validator(
+        "GENSHIN_COLOR",
+        "HSR_COLOR",
+        "PRIMARY_COLOR",
+        "SUCCESS_COLOR",
+        "ERROR_COLOR",
+        "WARNING_COLOR",
+        mode="before",
+    )
+    @classmethod
+    def _parse_color(cls, value):
+        """Cho phép khai báo màu dạng hex trong .env: `0x5BC0BE`, `#5BC0BE` hoặc số thập phân."""
+        if isinstance(value, str):
+            raw = value.strip()
+            if raw.lower().startswith("0x"):
+                return int(raw, 16)
+            if raw.startswith("#"):
+                return int(raw[1:], 16)
+            if raw.isdigit():
+                return int(raw)
+        return value
 
     @property
     def db_file_path(self) -> Path:

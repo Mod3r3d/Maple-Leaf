@@ -1,4 +1,4 @@
-"""Các kiểu dữ liệu Enum dùng trong HoyoBot (Genshin Impact & Honkai: Star Rail)."""
+"""Các kiểu dữ liệu Enum dùng trong Maple Leaf (Genshin Impact & Honkai: Star Rail)."""
 
 import re
 from enum import Enum

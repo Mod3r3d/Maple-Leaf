@@ -1,17 +1,17 @@
-"""Kiểm thử việc nạp các Cogs và Slash Commands của HoyoBot."""
+"""Kiểm thử việc nạp các Cogs và Slash Commands của Maple Leaf."""
 
 import unittest
-from app.bot.client import HoyoBot, EXTENSIONS
-from app.db.database import db
+from app.bot.client import MapleLeaf, EXTENSIONS
+from tests.db_test_utils import TempDatabaseMixin
 
 
-class TestBotSetup(unittest.IsolatedAsyncioTestCase):
+class TestBotSetup(TempDatabaseMixin, unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        await db.connect()
-        self.bot = HoyoBot()
+        await self._open_temp_db()
+        self.bot = MapleLeaf()
 
     async def asyncTearDown(self):
-        await db.close()
+        await self._close_temp_db()
 
     async def test_extensions_and_commands(self):
         # Nạp tất cả các extensions

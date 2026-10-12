@@ -22,7 +22,7 @@ class EnkaClient:
     def __init__(self):
         self._session: Optional[aiohttp.ClientSession] = None
         self._headers = {
-            "User-Agent": "HoyoBot-Discord/1.0.0 (Public Hoyo Discord Assistant)",
+            "User-Agent": "MapleLeaf-Discord/1.0.0 (Public Hoyo Discord Assistant)",
             "Accept": "application/json",
         }
 

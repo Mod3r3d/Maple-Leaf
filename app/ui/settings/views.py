@@ -35,7 +35,7 @@ class SettingsView(View):
     def build_embed(self) -> discord.Embed:
         embed = discord.Embed(
             title="⚙️ Cài Đặt Cá Nhân",
-            description="Tùy chỉnh trải nghiệm hiển thị và quyền riêng tư của bạn với HoyoBot.",
+            description="Tùy chỉnh trải nghiệm hiển thị và quyền riêng tư của bạn với Maple Leaf.",
             color=0x3498DB,
         )
         embed.add_field(

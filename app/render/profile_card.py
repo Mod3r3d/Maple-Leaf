@@ -200,7 +200,7 @@ def _sync_render_profile_card(
 
     # Footer
     font_footer = get_font(12, bold=False)
-    draw.text((32, height - 32), "HoyoBot • Trợ thủ Genshin Impact & Honkai: Star Rail", fill=(120, 130, 150), font=font_footer)
+    draw.text((32, height - 32), "Maple Leaf • Trợ thủ Genshin Impact & Honkai: Star Rail", fill=(120, 130, 150), font=font_footer)
 
     buffer = io.BytesIO()
     base_img.save(buffer, format="PNG")

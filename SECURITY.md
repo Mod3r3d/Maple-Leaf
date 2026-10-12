@@ -58,8 +58,8 @@ git push --force origin main
 
 ```bash
 pip install git-filter-repo
-git filter-repo --path data/.secret.key --path data/hoyobot.db-wal \
-                --path data/hoyobot.db-shm --invert-paths
+git filter-repo --path data/.secret.key --path data/mapleleaf.db-wal \
+                --path data/mapleleaf.db-shm --invert-paths
 git push --force origin main
 ```
 

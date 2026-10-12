@@ -59,8 +59,8 @@ Script sẽ tự tạo môi trường ảo, cài thư viện và tạo file `.en
 ### Cách 2 — Làm thủ công
 
 ```bash
-git clone https://github.com/<ten-ban>/hoyoBot.git
-cd hoyoBot
+git clone https://github.com/Mod3r3d/Maple-Leaf.git
+cd Maple-Leaf
 
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
@@ -82,7 +82,7 @@ Các biến khác đều có giá trị mặc định hợp lý. Danh sách đ�
 | Biến | Mặc định | Mô tả |
 |---|---|---|
 | `DISCORD_TOKEN` | *(bắt buộc)* | Token bot Discord |
-| `DATABASE_PATH` | `data/hoyobot.db` | Đường dẫn CSDL SQLite |
+| `DATABASE_PATH` | `data/mapleleaf.db` | Đường dẫn CSDL SQLite |
 | `DATABASE_URL` | *(trống)* | Dùng PostgreSQL thay SQLite (nếu điền, bỏ qua `DATABASE_PATH`) |
 | `AUTOMATION_ENABLED` | `True` | Bật/tắt toàn bộ lớp chạy nền |
 | `AUTOMATION_MODE` | `live` | `live` = gọi API thật, `dry-run` = chỉ giả lập |
@@ -143,7 +143,7 @@ CI tự động chạy test trên Windows và Linux mỗi khi push/PR (xem [`.gi
 ## 📁 Cấu trúc dự án
 
 ```text
-hoyoBot/
+Maple-Leaf/
 ├── app/
 │   ├── main.py              # Điểm khởi chạy
 │   ├── config.py            # Cấu hình (pydantic-settings)

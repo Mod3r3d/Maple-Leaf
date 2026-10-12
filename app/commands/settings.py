@@ -40,12 +40,12 @@ class GeneralCommands(commands.Cog):
         )
         await interaction.followup.send(embed=embed)
 
-    @app_commands.command(name="about", description="Thông tin giới thiệu về HoyoBot")
+    @app_commands.command(name="about", description="Thông tin giới thiệu về Maple Leaf")
     async def about_cmd(self, interaction: discord.Interaction):
         embed = discord.Embed(
-            title="✦ Giới Thiệu HoyoBot",
+            title="✦ Giới Thiệu Maple Leaf",
             description=(
-                "**HoyoBot** là trợ thủ Discord chuyên biệt dành cho cộng đồng người chơi **Genshin Impact** và **Honkai: Star Rail**.\n\n"
+                "**Maple Leaf** là trợ thủ Discord chuyên biệt dành cho cộng đồng người chơi **Genshin Impact** và **Honkai: Star Rail**.\n\n"
                 "Được thiết kế tinh gọn, hiện đại và tập trung tối đa vào tốc độ và trải nghiệm người dùng tiếng Việt."
             ),
             color=0x3498DB,
@@ -63,10 +63,10 @@ class GeneralCommands(commands.Cog):
         embed.set_footer(text="Phát triển bằng Python, discord.py & Pillow.")
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @app_commands.command(name="help", description="Xem hướng dẫn sử dụng các lệnh của HoyoBot")
+    @app_commands.command(name="help", description="Xem hướng dẫn sử dụng các lệnh của Maple Leaf")
     async def help_cmd(self, interaction: discord.Interaction):
         embed = discord.Embed(
-            title="✦ Danh Sách Lệnh HoyoBot",
+            title="✦ Danh Sách Lệnh Maple Leaf",
             description="Tất cả các lệnh đều sử dụng hệ thống Slash Command (`/`):",
             color=0x3498DB,
         )
