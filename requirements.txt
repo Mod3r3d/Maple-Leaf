@@ -1,0 +1,56 @@
+# ═══════════════════════════════════════════════════════════════
+#  requirements.txt — ĐÃ GHIM CỨNG PHIÊN BẢN (đã kiểm thử)
+#
+#  ⚠️ Đây là file sinh tự động. KHÔNG sửa tay.
+#     Muốn thay đổi thư viện → sửa `requirements.in` rồi chạy:
+#         pip install pip-tools
+#         pip-compile requirements.in --output-file requirements.txt
+#
+#  Bản ghim này đảm bảo mọi người cài ra ĐÚNG bộ phiên bản như đã kiểm thử,
+#  tránh lỗi "chạy được máy tôi nhưng không chạy được máy bạn".
+#  Các gói chỉ dành cho Windows đã được đánh dấu bằng environment marker.
+# ═══════════════════════════════════════════════════════════════
+
+# ── Dependency trực tiếp ───────────────────────────────────────
+aiohttp==3.14.3
+aiosqlite==0.22.1
+alembic==1.20.0
+asyncpg==0.32.0
+APScheduler==3.11.3
+cryptography==50.0.2
+discord.py==2.7.1
+genshin==1.7.31
+greenlet==3.5.6
+loguru==0.7.3
+orjson==3.12.0
+pillow==12.3.0
+pydantic==2.13.5
+pydantic-settings==2.15.0
+python-dotenv==1.2.4
+SQLAlchemy==2.1.3
+tabulate==0.10.0
+
+# ── Dependency gián tiếp (do các gói trên kéo theo) ────────────
+aiohappyeyeballs==2.7.1
+aiosignal==1.4.0
+annotated-types==0.8.0
+attrs==26.1.0
+cffi==2.1.1
+frozenlist==1.8.0
+idna==3.20
+Mako==1.4.3
+MarkupSafe==3.0.4
+multidict==6.9.1
+propcache==0.5.4
+pycparser==3.0
+pydantic_core==2.46.5
+tenacity==9.1.4
+typing-inspection==0.4.4
+typing_extensions==4.16.0
+tzdata==2026.5
+tzlocal==5.4.4
+yarl==1.25.1
+
+# ── Chỉ dùng trên Windows ──────────────────────────────────────
+colorama==0.4.6 ; sys_platform == "win32"
+win32_setctime==1.2.0 ; sys_platform == "win32"

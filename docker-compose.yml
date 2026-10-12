@@ -1,0 +1,18 @@
+# Maple Leaf — Docker Compose
+# Chạy:  docker compose up -d --build
+# Log:   docker compose logs -f
+# Dừng:  docker compose down
+#
+# LƯU Ý: file .env phải tồn tại (copy từ .env.example) và chứa DISCORD_TOKEN.
+services:
+  bot:
+    build: .
+    image: maple-leaf:latest
+    container_name: maple-leaf
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      # Giữ lại CSDL, khoá mã hoá và log giữa các lần khởi động lại container.
+      - ./data:/app/data
+      - ./logs:/app/logs

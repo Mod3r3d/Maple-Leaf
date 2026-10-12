@@ -1,0 +1,38 @@
+# Không đưa vào image Docker (build context)
+.git
+.github
+.venv
+venv
+env
+
+# Bí mật & dữ liệu người dùng — TUYỆT ĐỐI không copy vào image
+.env
+.env.*
+data/
+logs/
+*.db
+*.db-wal
+*.db-shm
+*.log
+
+# Cache & build
+__pycache__
+*.py[cod]
+*.egg-info
+build/
+dist/
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.coverage
+
+# IDE / OS
+.idea
+.vscode
+.DS_Store
+
+# Tài liệu & test không cần trong runtime image
+docs/
+tests/
+*.md
+!README.md

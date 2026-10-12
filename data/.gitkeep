@@ -1,0 +1,3 @@
+# Thư mục này chứa dữ liệu runtime của bot (CSDL SQLite, khoá mã hoá, log...).
+# Nội dung được sinh ra tự động khi chạy bot và KHÔNG được commit lên git.
+# File .gitkeep này chỉ để giữ thư mục tồn tại trong repo.

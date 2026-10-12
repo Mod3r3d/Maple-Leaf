@@ -1,0 +1,67 @@
+# ─────────────────────────────────────────────────────────────
+#  HoyoBot — .gitignore
+#  LƯU Ý: TUYỆT ĐỐI không commit các file chứa bí mật/dữ liệu người dùng.
+# ─────────────────────────────────────────────────────────────
+
+# ── Bí mật & biến môi trường ──────────────────────────────────
+.env
+.env.*
+!.env.example
+data/.secret.key
+*.pem
+*.key
+
+# ── Dữ liệu người dùng (CSDL SQLite + WAL/SHM) ────────────────
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+data/*
+!data/.gitkeep
+
+# ── Log ───────────────────────────────────────────────────────
+logs/
+*.log
+
+# ── Môi trường ảo Python ──────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Python build/cache ────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ── Kiểm thử & lint cache ─────────────────────────────────────
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# ── Alembic (chỉ giữ mã nguồn migration) ──────────────────────
+deploy/postgres/alembic/__pycache__/
+deploy/postgres/alembic/versions/__pycache__/
+
+# ── IDE / OS ──────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Công cụ agent/AI (dữ liệu cục bộ) ─────────────────────────
+.workbuddy-ai/

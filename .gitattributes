@@ -1,0 +1,38 @@
+# Chuẩn hoá line-ending & cách Git xử lý file theo loại.
+# Giúp repo hoạt động đúng trên cả Windows, Linux và macOS.
+
+# Mặc định: Git tự nhận diện file văn bản và chuẩn hoá về LF trong repo.
+* text=auto
+
+# ── Bắt buộc LF ────────────────────────────────────────────────
+*.py      text eol=lf
+*.sh      text eol=lf
+*.md      text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.toml    text eol=lf
+*.ini     text eol=lf
+*.json    text eol=lf
+*.sql     text eol=lf
+*.mako    text eol=lf
+Dockerfile text eol=lf
+.env.example text eol=lf
+.gitignore   text eol=lf
+.gitattributes text eol=lf
+.editorconfig  text eol=lf
+
+# ── Bắt buộc CRLF (script Windows) ─────────────────────────────
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+
+# ── File nhị phân (không đụng tới) ─────────────────────────────
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.ico     binary
+*.ttf     binary
+*.otf     binary
+*.woff    binary
+*.woff2   binary
+*.db      binary

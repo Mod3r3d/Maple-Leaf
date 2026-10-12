@@ -1,0 +1,24 @@
+# Cấu hình công cụ phát triển (lint / format / test).
+# Metadata dự án nằm ở README.md; dependency runtime ở requirements.txt.
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = [".venv", "alembic/versions", "data"]
+
+[tool.ruff.lint]
+# Bộ quy tắc cơ bản, an toàn cho codebase hiện tại.
+select = ["E", "F", "W", "I"]
+ignore = [
+    "E501", # độ dài dòng do formatter quản lý
+    "E402", # cho phép import muộn (dùng để tránh vòng lặp import)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F401"]
+"app/commands/*" = ["F401"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-q"
