@@ -418,39 +418,14 @@ class AutoCommands(commands.GroupCog, group_name="auto"):
                 server_region=acc.server.value,
             )
 
-            # Bước 1 (chỉ đọc): kiểm tra token đổi mã còn hiệu lực không
-            token_ok, token_msg = await adapter.check_cookie_token_valid()
+            # Xác thực khả năng đổi mã trực tiếp bằng probe code
+            auth_ok, status, msg = await adapter.verify_redeem_access()
 
-            # Nếu token hiện tại không hợp lệ nhưng có đủ stoken + mid, thử gia hạn tự động
-            if not token_ok and info.get("can_auto_refresh"):
+            # Nếu chưa xác thực được nhưng có stoken + mid -> thử tự động gia hạn token và kiểm tra lại
+            if not auth_ok and info.get("can_auto_refresh"):
                 refreshed = await adapter.try_refresh_tokens()
                 if refreshed:
-                    token_ok, token_msg = await adapter.check_cookie_token_valid()
-
-            if not token_ok:
-                # Token đã hết hạn hoặc thiếu và không thể tự gia hạn -> báo lỗi chính xác
-                if info.get("has_stoken") and not info.get("has_mid"):
-                    reason_msg = "Cookie có `stoken` nhưng thiếu `ltmid_v2` (hoặc `mid`), bot không thể tự cấp lại token đổi mã mới."
-                elif not info.get("has_cookie_token") and not info.get("has_stoken"):
-                    reason_msg = "Cookie thiếu hoàn toàn token đổi mã (`cookie_token`) và `stoken`."
-                else:
-                    reason_msg = "Token đổi mã (`cookie_token`) đã HẾT HẠN hoặc bị thu hồi."
-
-                verdict = (
-                    f"❌ **{reason_msg}**\n"
-                    "👉 Hãy dán lại cookie MỚI (kèm `stoken` + `ltmid_v2`) qua `/auto session_add` để bot tự gia hạn vĩnh viễn."
-                )
-                value = (
-                    f"{verdict}\n"
-                    f"├─ Token đổi mã: `cookie_token`={'có' if info['has_cookie_token'] else 'không'} | "
-                    f"`stoken`={'có' if info['has_stoken'] else 'không'} | `mid`={'có' if info.get('has_mid') else 'không'}\n"
-                    f"└─ Kiểm tra token: {token_msg}"
-                )
-                embed.add_field(name=header, value=value, inline=False)
-                continue
-
-            # Bước 2: token hợp lệ -> thử xác thực đổi mã bằng mã giả
-            auth_ok, status, msg = await adapter.verify_redeem_access()
+                    auth_ok, status, msg = await adapter.verify_redeem_access()
 
             if auth_ok:
                 verdict = "✅ **Cookie hợp lệ để đổi Giftcode.**"
@@ -458,18 +433,37 @@ class AutoCommands(commands.GroupCog, group_name="auto"):
                     verdict += " (có `stoken` → tự gia hạn bền vững)"
                 else:
                     verdict += " ⚠️ Nhưng THIẾU `stoken` → token đổi mã sẽ hết hạn và bot không tự gia hạn được."
-            elif info["redeem_durable"]:
-                verdict = "❌ **Không xác thực được đổi mã** dù có `stoken`. Cookie có thể đã bị thu hồi/đăng xuất."
+                api_detail = "Đã xác nhận quyền đổi mã với máy chủ HoYoverse."
+            elif info.get("has_stoken") and not info.get("has_mid"):
+                verdict = (
+                    "❌ **Cookie có `stoken` nhưng thiếu `ltmid_v2` (hoặc `mid`), bot không thể tự cấp lại token đổi mã mới.**\n"
+                    "👉 Hãy đăng nhập lại bằng `/auto login` hoặc dán cookie qua `/auto session_add`."
+                )
+                api_detail = f"`{status}` — {msg[:180]}"
+            elif not info.get("has_cookie_token") and not info.get("has_stoken"):
+                verdict = (
+                    "❌ **Cookie thiếu hoàn toàn token đổi mã (`cookie_token`) và `stoken`.**\n"
+                    "👉 Hãy đăng nhập lại bằng `/auto login` hoặc dán cookie qua `/auto session_add`."
+                )
+                api_detail = f"`{status}` — {msg[:180]}"
+            elif info.get("redeem_durable"):
+                verdict = (
+                    f"❌ **Không xác thực được đổi mã dù có `stoken`.** ({msg})\n"
+                    "👉 Phiên đăng nhập có thể đã bị đăng xuất hoặc thu hồi. Hãy đăng nhập lại bằng `/auto login`."
+                )
+                api_detail = f"`{status}` — {msg[:180]}"
             else:
                 verdict = (
-                    "❌ **Cookie KHÔNG dùng được để đổi Giftcode.** Điểm danh vẫn có thể hoạt động bình thường."
+                    f"❌ **Token đổi mã (`cookie_token`) đã HẾT HẠN hoặc bị thu hồi.** ({msg})\n"
+                    "👉 Hãy đăng nhập lại bằng `/auto login` hoặc dán cookie mới kèm `stoken` để bot tự gia hạn vĩnh viễn."
                 )
+                api_detail = f"`{status}` — {msg[:180]}"
 
             value = (
                 f"{verdict}\n"
                 f"├─ Token đổi mã: `cookie_token`={'có' if info['has_cookie_token'] else 'không'} | "
-                f"`stoken`={'có' if info['has_stoken'] else 'không'}\n"
-                f"└─ Phản hồi API: `{status}` — {msg[:180]}"
+                f"`stoken`={'có' if info['has_stoken'] else 'không'} | `mid`={'có' if info.get('has_mid') else 'không'}\n"
+                f"└─ Xác thực API: {api_detail}"
             )
             embed.add_field(name=header, value=value, inline=False)
 

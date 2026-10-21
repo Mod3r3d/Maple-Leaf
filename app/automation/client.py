@@ -295,21 +295,19 @@ class HoyoClientAdapter:
     PROBE_CODE = "MAPLELEAFVERIFY0000"
 
     async def check_cookie_token_valid(self) -> Tuple[bool, str]:
-        """Kiểm tra (chỉ đọc) xem `cookie_token` dùng cho đổi mã còn hiệu lực hay không.
+        """Kiểm tra xem `cookie_token` dùng cho đổi mã còn hiệu lực hay không.
 
-        Gọi endpoint thông tin tài khoản của HoYoLAB — KHÔNG đổi mã, KHÔNG tác động tài khoản.
+        Gửi mã giả tới API đổi mã thực tế để xác minh quyền đổi mã thay vì dùng endpoint v1 cũ.
         """
-        if not self.has_cookie_token:
-            return False, "Cookie không có `cookie_token`/`cookie_token_v2`."
+        if not self.has_cookie_token and not self.has_stoken:
+            return False, "Cookie không có `cookie_token` hoặc `stoken`."
         try:
-            info = await genshin.fetch_cookie_token_info(
-                self.cookie_dict,
-                source="cookie_token",
-                region=self.genshin_region,
-            )
-            return True, f"Token đổi mã còn hiệu lực (account_id={info.get('account_id')})."
+            auth_ok, status, msg = await self.verify_redeem_access()
+            if auth_ok:
+                return True, "Token đổi mã hoàn toàn hợp lệ."
+            return False, f"Token đổi mã không hợp lệ ({msg})."
         except Exception as e:
-            return False, f"Token đổi mã KHÔNG hợp lệ hoặc đã hết hạn ({e})."
+            return False, f"Lỗi khi kiểm tra token đổi mã: {e}"
 
     async def verify_redeem_access(self) -> Tuple[bool, str, str]:
         """Kiểm tra khả năng xác thực Đổi Giftcode mà không đổi mã thật.
