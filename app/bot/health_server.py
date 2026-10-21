@@ -35,8 +35,8 @@ class CaptchaSession:
     future: asyncio.Future
     created_at: float = field(default_factory=time.time)
     lang: str = "vi"
-    api_server: str = "api-na.geetest.com"
-    for_new_os_app: bool = False
+    api_server: str = "gcaptcha4.captchami.com"
+    for_new_os_app: bool = True
 
 
 class HealthCheckServer:
@@ -54,17 +54,20 @@ class HealthCheckServer:
         future: asyncio.Future,
         *,
         lang: str = "vi",
-        api_server: str = "api-na.geetest.com",
-        for_new_os_app: bool = False,
+        api_server: Optional[str] = None,
+        for_new_os_app: Optional[bool] = None,
     ) -> None:
         """Đăng ký một phiên giải Captcha mới."""
+        is_v4 = isinstance(mmt, (MMTv4, SessionMMTv4)) or getattr(mmt, "use_v4", False)
+        chosen_api_server = api_server or ("gcaptcha4.captchami.com" if is_v4 else "api-na.geetest.com")
+        chosen_for_new_os_app = for_new_os_app if for_new_os_app is not None else is_v4
         self._captcha_sessions[session_id] = CaptchaSession(
             session_id=session_id,
             mmt=mmt,
             future=future,
             lang=lang,
-            api_server=api_server,
-            for_new_os_app=for_new_os_app,
+            api_server=chosen_api_server,
+            for_new_os_app=chosen_for_new_os_app,
         )
 
     def cleanup_captcha_session(self, session_id: str) -> None:
@@ -274,11 +277,11 @@ class HealthCheckServer:
 </html>"""
             return web.Response(text=expired_html, content_type="text/html", status=410)
 
-        is_v4 = isinstance(session.mmt, (MMTv4, SessionMMTv4))
+        is_v4 = isinstance(session.mmt, (MMTv4, SessionMMTv4)) or getattr(session.mmt, "use_v4", False)
         gt_ver = "v4" if is_v4 else "v3"
-        api_server = session.api_server or "api-na.geetest.com"
+        api_server = session.api_server or ("gcaptcha4.captchami.com" if is_v4 else "api-na.geetest.com")
         lang = session.lang or "vi"
-        for_new_os_app = str(session.for_new_os_app).lower()
+        for_new_os_app = "true" if (session.for_new_os_app or is_v4) else "false"
 
         html = f"""<!DOCTYPE html>
 <html lang="vi">

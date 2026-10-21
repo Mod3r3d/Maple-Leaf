@@ -9,6 +9,7 @@ import uuid
 from typing import Any, Awaitable, Callable, Dict, Optional
 
 import genshin
+from genshin.models.auth.geetest import MMTv4, SessionMMTv4
 from loguru import logger
 
 from app.config import settings
@@ -263,7 +264,17 @@ async def login_with_app(
         captcha_url = f"{settings.web_base_url}/captcha/{session_id}"
         future = asyncio.get_running_loop().create_future()
 
-        health_server.register_captcha_session(session_id, mmt, future)
+        is_v4 = isinstance(mmt, (SessionMMTv4, MMTv4)) or getattr(mmt, "use_v4", False)
+        api_server = auth_server.HOYOLAB_GT_SERVER if is_v4 else "api-na.geetest.com"
+        for_new_os_app = is_v4
+
+        health_server.register_captcha_session(
+            session_id,
+            mmt,
+            future,
+            api_server=api_server,
+            for_new_os_app=for_new_os_app,
+        )
         try:
             await captcha_callback(session_id, captcha_url)
 
