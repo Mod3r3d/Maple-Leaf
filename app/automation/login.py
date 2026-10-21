@@ -1,22 +1,12 @@
 """Đăng nhập HoYoLAB qua endpoint **app** để lấy cookie đầy đủ (bao gồm `stoken`).
 
-Vì sao cần module này?
-    - Đăng nhập web (`login_with_password`) **không** trả về `stoken`.
-    - Chỉ endpoint app (`login_with_app_password`) mới cấp `stoken` — thứ duy nhất
-      giúp bot tự gia hạn `cookie_token` (token đổi Giftcode chỉ sống vài giờ).
-
-Lưu ý khi chạy trong bot Discord:
-    Luồng đăng nhập gốc của thư viện có 2 bước tương tác **trên máy chạy bot**:
-    captcha (mở web server nội bộ) và mã xác minh email (nhập từ terminal).
-    Bot không thể đưa 2 bước đó cho người dùng Discord, nên module này **chặn sớm**
-    và trả về lỗi rõ ràng để người dùng chuyển sang script local.
-
-    Mật khẩu chỉ tồn tại trong bộ nhớ trong lúc gọi API và **không được ghi log**.
+Hỗ trợ giải Captcha tương tác qua Cổng Web Portal (HealthCheckServer)
+và nhập mã xác thực OTP 6 số từ Email trực tiếp qua Discord Modal.
 """
 
 import asyncio
 import uuid
-from typing import Dict
+from typing import Any, Awaitable, Callable, Dict, Optional
 
 import genshin
 from loguru import logger
@@ -37,8 +27,7 @@ class LoginError(Exception):
 class LoginNeedsCaptcha(LoginError):
     def __init__(self):
         super().__init__(
-            "HoYoLAB yêu cầu **captcha**. Bot không thể hiển thị captcha trong Discord — "
-            "hãy chạy `scripts/get_full_cookie.py` trên máy tính để hoàn tất."
+            "HoYoLAB yêu cầu **captcha**. Vui lòng mở đường dẫn giải Captcha được cung cấp để hoàn tất."
         )
 
 
@@ -46,13 +35,13 @@ class LoginNeedsEmailCode(LoginError):
     def __init__(self):
         super().__init__(
             "HoYoLAB yêu cầu **mã xác minh email** (thường gặp ở lần đăng nhập đầu trên thiết bị mới). "
-            "Hãy chạy `scripts/get_full_cookie.py` trên máy tính để nhập mã."
+            "Vui lòng nhấn nút nhập mã xác nhận trên Discord để hoàn tất."
         )
 
 
 class LoginTimeout(LoginError):
-    def __init__(self):
-        super().__init__("Đăng nhập quá thời gian chờ. Hãy thử lại sau ít phút.")
+    def __init__(self, message: str = "Đăng nhập quá thời gian chờ (180 giây). Hãy thử lại sau ít phút."):
+        super().__init__(message)
 
 
 def get_or_create_device_id() -> str:
@@ -69,24 +58,61 @@ def get_or_create_device_id() -> str:
     return value
 
 
-async def login_with_app(email: str, password: str, *, timeout: float = 90.0) -> Dict[str, str]:
+async def login_with_app(
+    email: str,
+    password: str,
+    *,
+    timeout: float = 180.0,
+    captcha_callback: Optional[Callable[[str, str], Awaitable[None]]] = None,
+    captcha_solved_callback: Optional[Callable[[], Awaitable[None]]] = None,
+    otp_callback: Optional[Callable[[], Awaitable[str]]] = None,
+) -> Dict[str, str]:
     """Đăng nhập app HoYoLAB và trả về dict cookie đầy đủ (có `stoken`).
 
-    Raises:
-        LoginNeedsCaptcha / LoginNeedsEmailCode / LoginTimeout / LoginError
-        cùng các lỗi gốc của `genshin` (sai mật khẩu, tài khoản không tồn tại...).
+    Hỗ trợ:
+    - captcha_callback(session_id, captcha_url): Được gọi khi HoYoLAB yêu cầu giải Captcha.
+    - captcha_solved_callback(): Được gọi khi Captcha được giải thành công trên Web.
+    - otp_callback() -> str: Được gọi khi HoYoLAB yêu cầu mã xác minh OTP 6 số từ email.
     """
     # Import muộn để tránh vòng lặp import khi bot khởi động.
     from genshin.client.components.auth import server as auth_server
 
-    async def _reject_captcha(_mmt):
-        raise LoginNeedsCaptcha()
+    from app.bot.health_server import health_server
 
-    async def _reject_email_code(*, prompt: str = "") -> str:  # noqa: ARG001
+    async def _handle_captcha(mmt: Any) -> Any:
+        """Xử lý Geetest Captcha qua Web Portal của Maple Leaf."""
+        if not captcha_callback:
+            raise LoginNeedsCaptcha()
+
+        session_id = str(uuid.uuid4())
+        captcha_url = f"{settings.web_base_url}/captcha/{session_id}"
+        future = asyncio.get_running_loop().create_future()
+
+        health_server.register_captcha_session(session_id, mmt, future)
+        try:
+            await captcha_callback(session_id, captcha_url)
+
+            # Đợi người dùng kéo thanh trượt Captcha trên trình duyệt
+            res = await asyncio.wait_for(future, timeout=120.0)
+            if captcha_solved_callback:
+                await captcha_solved_callback()
+            return res
+        except asyncio.TimeoutError as exc:
+            raise LoginTimeout("Quá thời gian chờ giải Captcha (120 giây). Vui lòng thử lại.") from exc
+        finally:
+            health_server.cleanup_captcha_session(session_id)
+
+    async def _handle_email_code(*, prompt: str = "") -> str:  # noqa: ARG001
+        """Xử lý nhập mã xác thực OTP 6 số từ email."""
+        if otp_callback:
+            code = await otp_callback()
+            if not code:
+                raise LoginError("Chưa nhập mã xác nhận OTP.")
+            return code
         raise LoginNeedsEmailCode()
 
     original_enter_code = auth_server.enter_code
-    auth_server.enter_code = _reject_email_code
+    auth_server.enter_code = _handle_email_code
 
     try:
         async with _LOGIN_LOCK:
@@ -96,12 +122,16 @@ async def login_with_app(email: str, password: str, *, timeout: float = 90.0) ->
                     email,
                     password,
                     device_id=get_or_create_device_id(),
-                    geetest_solver=_reject_captcha,
+                    geetest_solver=_handle_captcha,
                 ),
                 timeout=timeout,
             )
     except asyncio.TimeoutError as exc:
         raise LoginTimeout() from exc
+    except genshin.errors.WrongOTP as exc:
+        raise LoginError("Mã xác minh (OTP) không chính xác hoặc đã hết hạn. Hãy thử lại.") from exc
+    except (genshin.errors.VerificationCodeRateLimited, genshin.errors.OTPRateLimited) as exc:
+        raise LoginError("Đã yêu cầu mã xác minh quá nhiều lần. Vui lòng chờ vài phút rồi thử lại.") from exc
     finally:
         auth_server.enter_code = original_enter_code
 

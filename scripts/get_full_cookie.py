@@ -214,8 +214,11 @@ async def main() -> None:
     except genshin.errors.AccountLoginFail:
         logger.error("Sai mật khẩu. Kiểm tra lại.")
         return
-    except genshin.errors.VerificationCodeRateLimited:
-        logger.error("Đã yêu cầu mã xác minh quá nhiều lần. Thử lại sau.")
+    except (genshin.errors.VerificationCodeRateLimited, genshin.errors.OTPRateLimited):
+        logger.error("Đã yêu cầu mã xác minh quá nhiều lần. Hãy đợi một vài phút rồi thử lại sau.")
+        return
+    except genshin.errors.WrongOTP:
+        logger.error("❌ Mã xác minh (OTP) không chính xác hoặc đã hết hạn. Hãy kiểm tra email mới nhất được gửi từ HoYoverse và chạy lại script.")
         return
     except Exception as e:  # noqa: BLE001
         logger.exception(f"Đăng nhập thất bại: {e}")

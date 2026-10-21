@@ -57,9 +57,21 @@ class Settings(BaseSettings):
     # Admin Discord User IDs (danh sách ID cách nhau bởi dấu phẩy, ví dụ: "12345678,87654321")
     ADMIN_USER_IDS: str = ""
 
-    # Health Check Web Server (tự động kích hoạt khi có PORT trên Render / Cloud PaaS)
+    # Health Check & Captcha Web Server (tự động kích hoạt khi có PORT trên Render / Cloud PaaS)
     PORT: Optional[int] = None
     HEALTH_HOST: str = "0.0.0.0"
+    RENDER_EXTERNAL_URL: Optional[str] = None
+    PUBLIC_URL: Optional[str] = None
+
+    @property
+    def web_base_url(self) -> str:
+        """URL công khai của web server để người dùng mở trang giải Captcha."""
+        if self.PUBLIC_URL:
+            return self.PUBLIC_URL.rstrip("/")
+        if self.RENDER_EXTERNAL_URL:
+            return self.RENDER_EXTERNAL_URL.rstrip("/")
+        port = self.PORT or 10000
+        return f"http://localhost:{port}"
 
     # Embed Colors
     GENSHIN_COLOR: int = 0x5BC0BE  # Xanh ngọc Genshin

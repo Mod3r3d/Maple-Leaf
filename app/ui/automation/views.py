@@ -1,5 +1,6 @@
 """UI Views và Modals tương tác cho tính năng Automation v2."""
 
+import asyncio
 import time
 
 import discord
@@ -146,6 +147,75 @@ class CookieInputModal(Modal, title="Thêm / Cập Nhật Cookie HoYoLAB"):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
+class EmailOTPModal(Modal, title="Xác Minh Email HoYoLAB"):
+    """Cửa sổ Modal nhập mã xác minh OTP 6 số từ Email ngay trên Discord."""
+
+    code = TextInput(
+        label="Mã xác nhận 6 số từ Email",
+        placeholder="Nhập 6 chữ số gửi từ HoYoverse...",
+        min_length=6,
+        max_length=6,
+        required=True,
+    )
+
+    def __init__(self, future: asyncio.Future):
+        super().__init__()
+        self.future = future
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        if not self.future.done():
+            self.future.set_result(self.code.value.strip())
+        await interaction.followup.send(
+            "⏳ Đã gửi mã OTP tới máy chủ HoYoLAB, vui lòng đợi hoàn tất đăng nhập...",
+            ephemeral=True,
+        )
+
+
+class EmailOTPActionView(View):
+    """View chứa nút bấm kích hoạt Modal nhập OTP an toàn."""
+
+    def __init__(self, future: asyncio.Future, user_id: int):
+        super().__init__(timeout=180.0)
+        self.future = future
+        self.user_id = user_id
+
+    @button(
+        label="Nhập Mã Xác Minh (OTP)",
+        style=discord.ButtonStyle.primary,
+        emoji="🔢",
+    )
+    async def enter_otp_btn(self, interaction: discord.Interaction, btn: Button):  # noqa: ARG002
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message(
+                "❌ Nút này chỉ dành cho người thực hiện lệnh đăng nhập.",
+                ephemeral=True,
+            )
+            return
+
+        modal = EmailOTPModal(future=self.future)
+        await interaction.response.send_modal(modal)
+
+    async def on_timeout(self):
+        if not self.future.done():
+            self.future.set_exception(LoginTimeout("Đã hết thời gian chờ nhập mã xác minh OTP (3 phút)."))
+
+
+class CaptchaLinkView(View):
+    """View chứa nút Link trực tiếp mở trang giải Captcha trên trình duyệt."""
+
+    def __init__(self, captcha_url: str):
+        super().__init__(timeout=180.0)
+        self.add_item(
+            Button(
+                label="Mở Trang Giải Captcha",
+                url=captcha_url,
+                style=discord.ButtonStyle.link,
+                emoji="🧩",
+            )
+        )
+
+
 class LoginModal(Modal, title="Đăng Nhập HoYoLAB"):
     """Đăng nhập bằng email + mật khẩu để bot tự lấy cookie đầy đủ (có `stoken`).
 
@@ -191,8 +261,56 @@ class LoginModal(Modal, title="Đăng Nhập HoYoLAB"):
         email = self.email.value.strip()
         password = self.password.value
 
+        async def on_captcha(session_id: str, captcha_url: str):
+            embed = discord.Embed(
+                title="🧩 HoYoLAB Yêu Cầu Giải Captcha",
+                description=(
+                    "HoYoLAB phát hiện đăng nhập mới và yêu cầu xác minh thanh trượt chống bot.\n\n"
+                    "👉 **Bấm vào nút bên dưới để mở trang web giải Captcha** (trên điện thoại hoặc máy tính).\n\n"
+                    "*(Sau khi bạn kéo khớp hình ảnh xong, Bot sẽ tự động tiếp tục đăng nhập)*"
+                ),
+                color=0xF39C12,
+            )
+            embed.set_footer(text="Cổng giải Captcha an toàn • Tự động tiếp tục sau khi kéo khớp hình")
+            await interaction.followup.send(
+                embed=embed,
+                view=CaptchaLinkView(captcha_url),
+                ephemeral=True,
+            )
+
+        async def on_captcha_solved():
+            await interaction.followup.send(
+                "✅ **Đã xác minh Captcha thành công!** Đang tiếp tục xử lý thông tin tài khoản...",
+                ephemeral=True,
+            )
+
+        async def on_otp() -> str:
+            future: asyncio.Future[str] = asyncio.get_running_loop().create_future()
+            embed = discord.Embed(
+                title="📩 HoYoLAB Đã Gửi Mã Xác Minh Email (OTP)",
+                description=(
+                    f"HoYoverse vừa gửi mã xác nhận 6 số đến email **{email}**.\n\n"
+                    "👉 **Hãy mở email (lấy thư mới nhất) và nhấn nút bên dưới để nhập mã:**"
+                ),
+                color=0x3498DB,
+            )
+            embed.set_footer(text="Thời gian chờ: 3 phút • Vui lòng nhập đúng mã 6 số")
+            view = EmailOTPActionView(future=future, user_id=self.discord_user_id)
+            await interaction.followup.send(
+                embed=embed,
+                view=view,
+                ephemeral=True,
+            )
+            return await asyncio.wait_for(future, timeout=180.0)
+
         try:
-            cookies = await login_with_app(email, password)
+            cookies = await login_with_app(
+                email,
+                password,
+                captcha_callback=on_captcha,
+                captcha_solved_callback=on_captcha_solved,
+                otp_callback=on_otp,
+            )
         except LoginNeedsCaptcha as exc:
             await interaction.followup.send(f"⚠️ {exc}", ephemeral=True)
             return
@@ -212,9 +330,9 @@ class LoginModal(Modal, title="Đăng Nhập HoYoLAB"):
         except genshin.errors.AccountDoesNotExist:
             await interaction.followup.send("❌ Email/tên đăng nhập không tồn tại.", ephemeral=True)
             return
-        except genshin.errors.VerificationCodeRateLimited:
+        except (genshin.errors.VerificationCodeRateLimited, genshin.errors.OTPRateLimited):
             await interaction.followup.send(
-                "⏳ Bạn đã yêu cầu mã xác minh quá nhiều lần. Thử lại sau.", ephemeral=True
+                "⏳ Bạn đã yêu cầu mã xác minh quá nhiều lần. Hãy đợi vài phút rồi thử lại sau.", ephemeral=True
             )
             return
         except LoginError as exc:
