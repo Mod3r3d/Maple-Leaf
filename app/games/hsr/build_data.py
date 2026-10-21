@@ -1,6 +1,7 @@
 """Dữ liệu hướng dẫn xây dựng (Build Guides) tiếng Việt cho nhân vật Honkai: Star Rail."""
 
 from typing import Dict, Optional
+
 from app.games.hsr.models import HSRBuild
 
 HSR_BUILDS: Dict[str, HSRBuild] = {

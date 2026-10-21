@@ -1,19 +1,18 @@
 """Mô hình SQLAlchemy ORM chuẩn cho PostgreSQL và SQLite."""
 
 from datetime import datetime
-from typing import Optional
+
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    ForeignKey,
     Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 

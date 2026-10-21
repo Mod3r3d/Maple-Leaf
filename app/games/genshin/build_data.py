@@ -1,6 +1,7 @@
 """Dữ liệu hướng dẫn xây dựng (Build Guides) tiếng Việt cho nhân vật Genshin Impact."""
 
 from typing import Dict, Optional
+
 from app.games.genshin.models import GenshinBuild
 
 GENSHIN_BUILDS: Dict[str, GenshinBuild] = {

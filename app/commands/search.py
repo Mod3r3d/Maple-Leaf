@@ -1,9 +1,11 @@
 """Nhóm lệnh /search tra cứu bách khoa dữ liệu Genshin và Star Rail."""
 
 from typing import List
+
 import discord
 from discord import app_commands
 from discord.ext import commands
+
 from app.games.enums import GameType
 from app.games.genshin.constants import GENSHIN_CHARACTERS
 from app.games.hsr.constants import HSR_CHARACTERS

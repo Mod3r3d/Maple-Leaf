@@ -1,9 +1,8 @@
 """Cơ chế mã hóa đối xứng an toàn cho Cookies và Thông tin xác thực (Fernet)."""
 
-import os
-from pathlib import Path
 from cryptography.fernet import Fernet, InvalidToken
 from loguru import logger
+
 from app.config import settings
 
 

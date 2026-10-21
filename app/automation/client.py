@@ -8,7 +8,8 @@ Hỗ trợ:
 """
 
 import asyncio
-from typing import Any, Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple
+
 import genshin
 from loguru import logger
 

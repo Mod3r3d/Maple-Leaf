@@ -1,8 +1,9 @@
 """Provider tự động hóa nhiệm vụ Mimo và Điểm danh Đồng hành (Accompany) trên HoYoLAB."""
 
 from typing import Any, Dict, List, Tuple
-import aiohttp
+
 from loguru import logger
+
 from app.games.enums import GameType
 
 
@@ -15,7 +16,7 @@ class MimoProvider:
     @classmethod
     async def get_and_execute_tasks(cls, cookie: str, game: GameType) -> List[Dict[str, Any]]:
         """Lấy danh sách nhiệm vụ Mimo và thực hiện các nhiệm vụ được phép."""
-        headers = {
+        _headers = {
             "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) miHoYoBBS/2.40.1",
             "Cookie": cookie,
             "Referer": "https://act.hoyolab.com/",
@@ -44,7 +45,7 @@ class AccompanyProvider:
     @classmethod
     async def perform_accompany(cls, cookie: str, game: GameType) -> Tuple[bool, str]:
         """Điểm danh đồng hành nhân vật yêu thích."""
-        headers = {
+        _headers = {
             "User-Agent": "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) miHoYoBBS/2.40.1",
             "Cookie": cookie,
         }

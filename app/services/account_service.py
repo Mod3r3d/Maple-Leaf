@@ -1,10 +1,11 @@
 """Dịch vụ quản lý tài khoản game (Genshin & HSR)."""
 
 from typing import List, Optional, Tuple
+
 from app.db.models.account import AccountModel
 from app.db.repositories.accounts import AccountRepository
 from app.db.repositories.users import UserRepository
-from app.games.enums import GameType, ServerRegion
+from app.games.enums import GameType
 from app.utils.validators import validate_uid
 
 

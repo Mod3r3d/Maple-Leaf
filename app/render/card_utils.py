@@ -4,9 +4,11 @@ import io
 import os
 from pathlib import Path
 from typing import Optional, Tuple
+
 import aiohttp
-from PIL import Image, ImageDraw, ImageFont
 from loguru import logger
+from PIL import Image, ImageDraw, ImageFont
+
 from app.integrations.cache import global_cache
 
 

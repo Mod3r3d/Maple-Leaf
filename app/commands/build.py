@@ -1,9 +1,11 @@
 """Nhóm lệnh /build hướng dẫn xây dựng trang bị và đội hình nhân vật (Build Guides)."""
 
 from typing import List
+
 import discord
 from discord import app_commands
 from discord.ext import commands
+
 from app.games.enums import GameType
 from app.games.genshin.build_data import GENSHIN_BUILDS
 from app.games.hsr.build_data import HSR_BUILDS

@@ -1,6 +1,7 @@
 """Dịch vụ quản lý cài đặt cá nhân."""
 
 from typing import Optional
+
 from app.db.models.user import SettingsModel
 from app.db.repositories.settings import SettingsRepository
 

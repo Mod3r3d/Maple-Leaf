@@ -1,8 +1,7 @@
 """Provider quét và phát hiện các Web Event chính thức mới của Genshin & Star Rail."""
 
 from typing import Any, Dict, List
-import aiohttp
-from loguru import logger
+
 from app.games.enums import GameType
 
 

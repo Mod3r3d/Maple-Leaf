@@ -1,6 +1,7 @@
 """Dịch vụ tra cứu chi tiết nhân vật (CharacterService)."""
 
 from typing import Any, List
+
 from app.db.models.account import AccountModel
 from app.games.enums import GameType
 from app.games.factory import provider_factory

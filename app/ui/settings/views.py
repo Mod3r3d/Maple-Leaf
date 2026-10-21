@@ -1,7 +1,8 @@
 """UI View tương tác cho lệnh /settings."""
 
 import discord
-from discord.ui import View, button, Button
+from discord.ui import Button, View, button
+
 from app.db.models.user import SettingsModel
 from app.services.settings_service import settings_service
 

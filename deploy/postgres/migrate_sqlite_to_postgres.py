@@ -34,7 +34,6 @@ if sys.stderr:
 # Bổ sung thư mục gốc dự án vào PYTHONPATH để import được `app` và `deploy`
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from app.config import settings
 from deploy.postgres.orm import Base
 
 TABLES_ORDER = [
@@ -112,7 +111,7 @@ async def run_migration(sqlite_path: str, pg_url: str):
     logger.info("=" * 60)
 
     sqlite_url = f"sqlite+aiosqlite:///{os.path.abspath(sqlite_path)}"
-    
+
     # Chuẩn hóa pg_url để tương thích asyncpg
     if pg_url.startswith("postgres://"):
         pg_url = pg_url.replace("postgres://", "postgresql+asyncpg://", 1)
@@ -136,7 +135,7 @@ async def run_migration(sqlite_path: str, pg_url: str):
             rows = await fetch_sqlite_rows(sqlite_engine, table)
             if rows:
                 await insert_pg_rows(pg_engine, table, rows)
-            
+
             pg_count_after = await count_table_rows(pg_engine, table)
 
             status = "✅ Khớp" if sqlite_count_before == pg_count_after else f"⚠️ Khác biệt ({sqlite_count_before} vs {pg_count_after})"

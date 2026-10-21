@@ -1,7 +1,6 @@
 """Hỗ trợ ngôn ngữ tiếng Việt và ánh xạ thuật ngữ game Genshin & HSR."""
 
-from typing import Dict, Any
-from app.games.enums import GameType, GenshinElement, HSRElement, HSRPath, GenshinWeaponType
+from typing import Dict
 
 # Emoji biểu tượng nguyên tố & vận mệnh
 ELEMENT_EMOJIS = {

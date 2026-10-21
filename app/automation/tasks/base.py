@@ -3,8 +3,9 @@
 import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
+
 from loguru import logger
-from app.config import settings
+
 from app.db.repositories.automation import AutomationLogRepository
 from app.games.enums import GameType
 

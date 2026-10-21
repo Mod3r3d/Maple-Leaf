@@ -1,6 +1,7 @@
 """Dịch vụ tra cứu hồ sơ người chơi (ProfileService) và Nhân vật (CharacterService)."""
 
-from typing import Any, List, Optional
+from typing import Any, List
+
 from app.db.models.account import AccountModel
 from app.games.enums import GameType
 from app.games.factory import provider_factory

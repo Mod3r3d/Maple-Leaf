@@ -1,9 +1,9 @@
 """Trung tâm điều phối thông báo Discord (Notification Center)."""
 
 from typing import Optional
+
 import discord
 from loguru import logger
-from app.config import settings
 
 
 class NotificationService:

@@ -1,8 +1,9 @@
 """Repository xử lý User và Settings với AsyncRLock điều phối."""
 
 from typing import Optional
+
 from app.db.database import db
-from app.db.models.user import UserModel, SettingsModel
+from app.db.models.user import SettingsModel, UserModel
 from app.games.enums import GameType
 
 

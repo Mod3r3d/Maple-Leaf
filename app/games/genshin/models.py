@@ -1,6 +1,7 @@
 """Pydantic models cho dữ liệu Genshin Impact."""
 
 from typing import Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 

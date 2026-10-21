@@ -1,7 +1,8 @@
 """Kiểm thử việc nạp các Cogs và Slash Commands của Maple Leaf."""
 
 import unittest
-from app.bot.client import MapleLeaf, EXTENSIONS
+
+from app.bot.client import EXTENSIONS, MapleLeaf
 from tests.db_test_utils import TempDatabaseMixin
 
 

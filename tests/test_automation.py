@@ -271,6 +271,7 @@ class TestHoyoClientAdapter(unittest.TestCase):
 
     def test_to_genshin_game(self):
         import genshin
+
         from app.automation.client import to_genshin_game
         self.assertEqual(to_genshin_game(GameType.GENSHIN), genshin.Game.GENSHIN)
         self.assertEqual(to_genshin_game(GameType.HSR), genshin.Game.STARRAIL)

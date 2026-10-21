@@ -1,7 +1,9 @@
 import asyncio
 from datetime import datetime
 from typing import Any, Dict
+
 from loguru import logger
+
 from app.automation.notifications import notification_service
 from app.automation.providers.hoyolab import HoYoLABCheckinProvider
 from app.automation.tasks.base import AutomationTask

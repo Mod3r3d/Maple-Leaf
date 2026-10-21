@@ -2,6 +2,7 @@
 
 import discord
 from loguru import logger
+
 from app.automation.manager import automation_manager
 from app.automation.notifications import notification_service
 from app.bot.health_server import health_server

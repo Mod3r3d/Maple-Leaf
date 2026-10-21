@@ -2,13 +2,14 @@
 
 from datetime import datetime
 from typing import List, Optional, Tuple
+
 from loguru import logger
+
 from app.db.database import db
 from app.db.models.account import AccountModel
 from app.db.models.automation import (
     AutomationLogModel,
     AutomationSettingsModel,
-    AutomationTaskModel,
     CheckinExecutionModel,
     GiftCodeModel,
     GiftcodeRedemptionModel,
@@ -295,7 +296,7 @@ class AutomationSettingsRepository:
     async def get_active_automation_accounts(feature_col: str = "checkin_enabled") -> List[Tuple[AccountModel, AutomationSettingsModel, SessionModel]]:
         """Lấy danh sách các tài khoản có session hợp lệ và đã opt-in tính năng tương ứng."""
         query = f"""
-        SELECT 
+        SELECT
             a.id AS a_id, a.discord_user_id AS a_user, a.game AS a_game, a.uid AS a_uid, a.server AS a_server, a.nickname AS a_nick, a.is_default AS a_def,
             s.id AS s_id, s.automation_enabled AS s_auto, s.checkin_enabled AS s_checkin, s.redeem_enabled AS s_redeem, s.mimo_enabled AS s_mimo, s.accompany_enabled AS s_accompany, s.event_notify_enabled AS s_event, s.notify_mode AS s_mode, s.notify_channel_id AS s_chan,
             sess.id AS sess_id, sess.cookie_encrypted AS sess_cookie, sess.session_status AS sess_status

@@ -3,12 +3,14 @@
 import asyncio
 import io
 from typing import Any, List, Optional
+
 from PIL import Image, ImageDraw
+
 from app.games.enums import GameType
 from app.render.card_utils import (
     create_gradient_bg,
-    draw_rounded_rect,
     download_image,
+    draw_rounded_rect,
     get_font,
 )
 from app.utils.validators import mask_uid
@@ -126,7 +128,7 @@ def _sync_render_profile_card(
             if char_img:
                 cx = start_x + idx * (card_w + spacing)
                 cy = start_y
-                av_w, av_h = 82, 82
+                av_w = 82
                 ix = cx + (card_w - av_w) // 2
                 iy = cy + 26
                 # Dùng kênh alpha của ảnh để render độ trong suốt hoàn hảo

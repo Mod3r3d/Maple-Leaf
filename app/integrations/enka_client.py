@@ -2,14 +2,15 @@
 
 import asyncio
 from typing import Any, Dict, Optional
+
 import aiohttp
 from loguru import logger
+
 from app.config import settings
 from app.games.base import (
     GameAPIError,
     GameRateLimitError,
     PlayerNotFoundError,
-    ProfilePrivateError,
 )
 from app.games.enums import GameType
 from app.integrations.cache import global_cache

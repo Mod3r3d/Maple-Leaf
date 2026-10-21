@@ -1,12 +1,13 @@
 """Lớp Client chính của Discord Bot (Maple Leaf)."""
 
 from typing import List
+
 import discord
 from discord.ext import commands
 from loguru import logger
-from app.bot.error_handler import on_app_command_error
-from app.bot.lifecycle import on_startup, on_shutdown
 
+from app.bot.error_handler import on_app_command_error
+from app.bot.lifecycle import on_shutdown, on_startup
 
 EXTENSIONS: List[str] = [
     # Nhóm lệnh cốt lõi

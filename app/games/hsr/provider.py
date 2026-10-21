@@ -3,18 +3,20 @@
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
 from loguru import logger
-from app.games.base import GameProvider, ProfilePrivateError, PlayerNotFoundError
+
+from app.games.base import GameProvider, PlayerNotFoundError, ProfilePrivateError
 from app.games.enums import GameType
-from app.games.hsr.constants import HSR_CHARACTERS, HSR_ELEMENT_COLORS
+from app.games.hsr.build_data import get_hsr_build
+from app.games.hsr.constants import HSR_CHARACTERS
 from app.games.hsr.models import (
-    HSRProfile,
+    HSRBuild,
     HSRCharacter,
     HSRLightCone,
+    HSRProfile,
     HSRRelic,
-    HSRBuild,
 )
-from app.games.hsr.build_data import get_hsr_build
 from app.integrations.enka_client import enka_client
 
 DATA_DIR = Path(__file__).parent / "data"

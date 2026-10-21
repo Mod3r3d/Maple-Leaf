@@ -1,27 +1,25 @@
 """Genshin Impact Game Provider triển khai GameProvider Protocol."""
 
-from typing import Any, Dict, List, Optional
-from loguru import logger
-from app.games.base import GameProvider, ProfilePrivateError, PlayerNotFoundError
-from app.games.enums import GameType
-from app.games.genshin.constants import (
-    GENSHIN_CHARACTERS,
-    FIGHT_PROP_MAP,
-    ELEMENT_COLORS,
-)
-from app.games.genshin.models import (
-    GenshinProfile,
-    GenshinCharacter,
-    GenshinWeapon,
-    GenshinArtifact,
-    GenshinBuild,
-)
-from app.games.genshin.build_data import get_genshin_build
-from app.integrations.enka_client import enka_client
-from app.utils.localization import translate_stat, format_stat_value
 import json
 import re
 from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from app.games.base import GameProvider, PlayerNotFoundError, ProfilePrivateError
+from app.games.enums import GameType
+from app.games.genshin.build_data import get_genshin_build
+from app.games.genshin.constants import (
+    GENSHIN_CHARACTERS,
+)
+from app.games.genshin.models import (
+    GenshinArtifact,
+    GenshinBuild,
+    GenshinCharacter,
+    GenshinProfile,
+    GenshinWeapon,
+)
+from app.integrations.enka_client import enka_client
+from app.utils.localization import translate_stat
 
 LOC_VI_PATH = Path(__file__).parent / "loc_vi.json"
 LOC_VI: Dict[str, str] = {}

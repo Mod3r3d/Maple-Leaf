@@ -1,9 +1,11 @@
 """Nhóm lệnh /giftcode tra cứu mã quà tặng và đổi thưởng thủ công."""
 
 from typing import Optional
+
 import discord
 from discord import app_commands
 from discord.ext import commands
+
 from app.automation.providers.hoyolab import HoYoLABRedeemProvider
 from app.db.repositories.accounts import AccountRepository
 from app.db.repositories.automation import (

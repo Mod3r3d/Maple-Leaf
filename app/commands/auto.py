@@ -1,9 +1,11 @@
 """Nhóm lệnh /auto quản lý trung tâm điều khiển Tự Động Hóa."""
 
 from typing import Optional
+
 import discord
 from discord import app_commands
 from discord.ext import commands
+
 from app.automation.manager import automation_manager
 from app.db.repositories.accounts import AccountRepository
 from app.db.repositories.automation import (

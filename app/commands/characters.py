@@ -1,9 +1,11 @@
 """Nhóm lệnh /characters tra cứu chi tiết nhân vật và vũ khí trong showcase."""
 
 from typing import Optional
+
 import discord
 from discord import app_commands
 from discord.ext import commands
+
 from app.games.enums import GameType
 from app.render.character_card import render_character_card
 from app.services.account_service import account_service

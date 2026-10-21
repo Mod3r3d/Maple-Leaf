@@ -1,8 +1,9 @@
 """Thành phần phân trang (Paginator View) dùng chung cho Discord UI."""
 
 from typing import List, Optional
+
 import discord
-from discord.ui import View, button, Button
+from discord.ui import Button, View, button
 
 
 class PaginatorView(View):

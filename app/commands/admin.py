@@ -1,9 +1,11 @@
 """Lệnh /admin quản trị hệ thống tự động hóa dành riêng cho Administrator."""
 
 from typing import Optional
+
 import discord
 from discord import app_commands
 from discord.ext import commands
+
 from app.automation.manager import automation_manager
 from app.config import settings
 from app.db.repositories.automation import AutomationLogRepository
@@ -41,9 +43,9 @@ class AdminCommands(commands.GroupCog, group_name="admin"):
         # Lấy 5 log thực thi gần nhất
         recent_logs = await AutomationLogRepository.get_recent_logs(limit=5)
         log_lines = []
-        for l in recent_logs:
-            time_str = l.created_at.strftime("%H:%M:%S") if l.created_at else ""
-            log_lines.append(f"[{time_str}] **{l.task_name}** ({l.status} - {l.duration_ms}ms): {l.message}")
+        for entry in recent_logs:
+            time_str = entry.created_at.strftime("%H:%M:%S") if entry.created_at else ""
+            log_lines.append(f"[{time_str}] **{entry.task_name}** ({entry.status} - {entry.duration_ms}ms): {entry.message}")
 
         embed = discord.Embed(
             title="🛠️ Quản Trị Hệ Thống Tự Động Hóa (Admin Dashboard)",

@@ -1,9 +1,11 @@
 """Nhóm lệnh /profile tra cứu hồ sơ người chơi Genshin Impact và Honkai: Star Rail."""
 
 from typing import Optional
+
 import discord
 from discord import app_commands
 from discord.ext import commands
+
 from app.games.enums import GameType
 from app.render.profile_card import render_profile_card
 from app.services.account_service import account_service

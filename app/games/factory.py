@@ -1,6 +1,7 @@
 """Factory khởi tạo GameProvider tương ứng với từng trò chơi."""
 
 from typing import Dict
+
 from app.games.base import GameProvider
 from app.games.enums import GameType
 from app.games.genshin.provider import GenshinProvider

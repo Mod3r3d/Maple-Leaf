@@ -1,7 +1,9 @@
 """Task theo dõi và phát hiện Sự Kiện Web mới."""
 
 from typing import Any, Dict
+
 from loguru import logger
+
 from app.automation.notifications import notification_service
 from app.automation.providers.web_events import WebEventProvider
 from app.automation.tasks.base import AutomationTask

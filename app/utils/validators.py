@@ -1,7 +1,7 @@
 """Trình xác thực và nhận diện UID cho Genshin Impact và Honkai: Star Rail."""
 
-import re
 from typing import Optional, Tuple
+
 from app.games.enums import GameType, ServerRegion
 
 

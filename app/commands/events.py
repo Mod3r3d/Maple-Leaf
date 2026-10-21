@@ -3,6 +3,7 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
+
 from app.games.enums import GameType
 from app.services.event_service import event_service
 

@@ -1,9 +1,12 @@
 """Lệnh /settings tùy chỉnh cá nhân và /ping, /about, /help thông tin bot."""
 
 import time
+
 import discord
 from discord import app_commands
 from discord.ext import commands
+
+from app.games.enums import GameType
 from app.services.settings_service import settings_service
 from app.ui.settings.views import SettingsView
 

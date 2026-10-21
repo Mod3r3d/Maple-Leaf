@@ -3,10 +3,12 @@
 import asyncio
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from loguru import logger
+
 from app.automation.tasks.checkin_task import DailyCheckinTask
 from app.automation.tasks.giftcode_tasks import GiftcodeDiscoveryTask, GiftcodeRedeemTask
 from app.automation.tasks.mimo_accompany_tasks import AccompanyTask, MimoTask

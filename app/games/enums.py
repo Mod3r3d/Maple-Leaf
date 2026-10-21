@@ -3,7 +3,6 @@
 import re
 from enum import Enum
 
-
 # Emoji Unicode mặc định — dùng khi người dùng KHÔNG cấu hình emoji tuỳ biến.
 # Nhờ vậy bot hiển thị đúng trên mọi server Discord, không phụ thuộc server của tác giả.
 DEFAULT_GAME_EMOJI = {

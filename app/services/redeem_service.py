@@ -4,15 +4,13 @@ Tập trung nghiệp vụ đổi mã cho cả lệnh thủ công (/giftcode rede
 và hệ thống tự động chạy ngầm (Persistent Redemption Queue).
 """
 
-import asyncio
 import re
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 from urllib.parse import parse_qs, unquote, urlparse
 
 from loguru import logger
 
-from app.automation.notifications import notification_service
 from app.automation.providers.hoyolab import HoYoLABRedeemProvider
 from app.config import settings
 from app.db.models.account import AccountModel

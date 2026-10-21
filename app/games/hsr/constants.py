@@ -1,6 +1,6 @@
 """Các hằng số và danh mục nhân vật Honkai: Star Rail."""
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 # Bảng mã nhân vật Honkai: Star Rail (ID -> (Tên tiếng Việt, Vận Mệnh, Thuộc Tính, Rarity))
 HSR_CHARACTERS: Dict[int, Dict[str, Any]] = {

@@ -3,12 +3,14 @@
 import asyncio
 import io
 from typing import Any, List, Optional
+
 from PIL import Image, ImageDraw
+
 from app.games.enums import GameType
 from app.render.card_utils import (
     create_gradient_bg,
-    draw_rounded_rect,
     download_image,
+    draw_rounded_rect,
     get_font,
 )
 

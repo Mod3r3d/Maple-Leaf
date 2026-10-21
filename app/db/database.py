@@ -1,12 +1,12 @@
 import asyncio
-import os
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Optional, Any
+from typing import Optional
+
 import aiosqlite
 from loguru import logger
-from app.config import settings
 
+from app.config import settings
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS users (

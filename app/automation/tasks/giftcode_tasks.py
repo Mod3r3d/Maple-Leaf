@@ -1,18 +1,17 @@
 import asyncio
 from typing import Any, Dict
+
 from loguru import logger
+
 from app.automation.notifications import notification_service
-from app.automation.providers.giftcodes import GiftcodeDiscoveryProvider
-from app.automation.providers.hoyolab import HoYoLABRedeemProvider
+from app.automation.providers.giftcodes import GiftcodeAggregator
 from app.automation.tasks.base import AutomationTask
 from app.config import settings
 from app.db.repositories.automation import (
     AutomationSettingsRepository,
     GiftCodeRepository,
-    SessionRepository,
 )
 from app.games.enums import GameType
-from app.automation.providers.giftcodes import GiftcodeAggregator
 
 
 class GiftcodeDiscoveryTask(AutomationTask):

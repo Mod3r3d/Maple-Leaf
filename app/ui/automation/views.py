@@ -4,8 +4,9 @@ import time
 
 import discord
 import genshin
-from discord.ui import Button, Modal, Select, TextInput, View, button
+from discord.ui import Button, Modal, TextInput, View, button
 from loguru import logger
+
 from app.automation.login import (
     LoginError,
     LoginNeedsCaptcha,
@@ -20,7 +21,7 @@ from app.db.repositories.automation import (
     SessionRepository,
 )
 from app.games.enums import GameType
-from app.security.encryption import inspect_cookie_tokens, mask_cookie
+from app.security.encryption import inspect_cookie_tokens
 
 # Giới hạn số lần thử đăng nhập để tránh dò mật khẩu qua Discord.
 _LOGIN_ATTEMPTS: dict[int, list[float]] = {}

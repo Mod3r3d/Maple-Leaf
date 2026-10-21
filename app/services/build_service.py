@@ -1,6 +1,7 @@
 """Dịch vụ hướng dẫn build (BuildService), tìm kiếm (SearchService), sự kiện (EventService), và cài đặt (SettingsService)."""
 
 from typing import Any, Dict, List, Optional
+
 from app.db.models.user import SettingsModel
 from app.db.repositories.settings import SettingsRepository
 from app.games.enums import GameType

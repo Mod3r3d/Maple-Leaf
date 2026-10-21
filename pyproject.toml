@@ -4,7 +4,7 @@
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-extend-exclude = [".venv", "alembic/versions", "data"]
+extend-exclude = [".venv", "alembic/versions", "deploy/postgres/alembic", "data"]
 
 [tool.ruff.lint]
 # Bộ quy tắc cơ bản, an toàn cho codebase hiện tại.
@@ -12,7 +12,9 @@ select = ["E", "F", "W", "I"]
 ignore = [
     "E501", # độ dài dòng do formatter quản lý
     "E402", # cho phép import muộn (dùng để tránh vòng lặp import)
+    "E701", # cho phép nhiều câu lệnh trên một dòng sau dấu hai chấm (bảng mapping)
 ]
+
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["F401"]

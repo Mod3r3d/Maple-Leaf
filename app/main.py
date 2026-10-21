@@ -1,9 +1,11 @@
 """Điểm khởi chạy ứng dụng Maple Leaf (Main Entrypoint)."""
 
 import sys
+
 from loguru import logger
-from app.config import settings
+
 from app.bot.client import MapleLeaf
+from app.config import settings
 
 
 def setup_logging():

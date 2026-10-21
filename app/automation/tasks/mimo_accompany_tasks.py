@@ -1,11 +1,9 @@
 """Tasks tự động hóa nhiệm vụ Mimo và Điểm danh Đồng hành (Accompany)."""
 
 from typing import Any, Dict
-from loguru import logger
-from app.automation.notifications import notification_service
+
 from app.automation.providers.mimo import AccompanyProvider, MimoProvider
 from app.automation.tasks.base import AutomationTask
-from app.config import settings
 from app.db.repositories.automation import (
     AutomationSettingsRepository,
     SessionRepository,

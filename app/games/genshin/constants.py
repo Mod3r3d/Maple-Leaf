@@ -1,6 +1,6 @@
 """Các hằng số và ánh xạ dữ liệu Genshin Impact."""
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 # Bảng mã nhân vật Genshin (ID -> (Tên tiếng Việt, Nguyên tố, Rarity, Icon Name))
 GENSHIN_CHARACTERS: Dict[int, Dict[str, Any]] = {

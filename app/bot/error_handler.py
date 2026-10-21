@@ -3,6 +3,7 @@
 import discord
 from discord import app_commands
 from loguru import logger
+
 from app.games.base import GameException, GameRateLimitError, PlayerNotFoundError, ProfilePrivateError
 
 

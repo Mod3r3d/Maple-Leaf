@@ -1,8 +1,10 @@
 """UI View tương tác cho lệnh /profile."""
 
 from typing import Any, List
+
 import discord
-from discord.ui import View, Select, button, Button
+from discord.ui import Button, Select, View, button
+
 from app.games.enums import GameType
 from app.render.character_card import render_character_card
 from app.render.profile_card import render_profile_card
