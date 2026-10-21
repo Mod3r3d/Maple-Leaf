@@ -22,8 +22,18 @@ from app.security.encryption import cipher
 
 class SessionRepository:
     @staticmethod
-    async def save_session(discord_user_id: int, game: GameType, uid: int, raw_cookie: str) -> SessionModel:
-        """Lưu hoặc cập nhật session cookie đã mã hóa, tự động gộp cookie mới với cookie cũ nếu có."""
+    async def save_session(
+        discord_user_id: int,
+        game: GameType,
+        uid: int,
+        raw_cookie: str,
+        reopen_failed_jobs: bool = True,
+    ) -> SessionModel:
+        """Lưu hoặc cập nhật session cookie đã mã hóa, tự động gộp cookie mới với cookie cũ nếu có.
+
+        `reopen_failed_jobs=False` dùng cho việc gia hạn token định kỳ: chỉ cập nhật
+        cookie, không mở lại các job đã thất bại (tránh vòng lặp thử lại vô ích).
+        """
         async with db.get_connection() as conn:
             final_cookie = raw_cookie.strip()
             # Nếu đã có session trước đó, gộp cookie để không làm mất token điểm danh (ltoken) hoặc token đổi mã (cookie_token)
@@ -62,24 +72,25 @@ class SessionRepository:
             row = await cursor.fetchone()
 
             # Tự động mở lại các redemption_jobs bị FAILED do AUTH_REQUIRED khi cập nhật session
-            await conn.execute(
-                """
-                UPDATE redemption_jobs
-                SET status = 'PENDING', attempt_count = 0, error_code = NULL, error_message = NULL, completed_at = NULL, next_retry_at = NULL
-                WHERE account_id IN (SELECT id FROM accounts WHERE discord_user_id = ? AND game = ? AND uid = ?)
-                  AND status = 'FAILED' AND error_code = 'AUTH_REQUIRED'
-                """,
-                (discord_user_id, game.value, uid),
-            )
-            # Xóa các bản ghi đổi lỗi AUTH_REQUIRED để cho phép quét và đổi lại
-            await conn.execute(
-                """
-                DELETE FROM giftcode_redemptions
-                WHERE account_id IN (SELECT id FROM accounts WHERE discord_user_id = ? AND game = ? AND uid = ?)
-                  AND status = 'AUTH_REQUIRED'
-                """,
-                (discord_user_id, game.value, uid),
-            )
+            if reopen_failed_jobs:
+                await conn.execute(
+                    """
+                    UPDATE redemption_jobs
+                    SET status = 'PENDING', attempt_count = 0, error_code = NULL, error_message = NULL, completed_at = NULL, next_retry_at = NULL
+                    WHERE account_id IN (SELECT id FROM accounts WHERE discord_user_id = ? AND game = ? AND uid = ?)
+                      AND status = 'FAILED' AND error_code = 'AUTH_REQUIRED'
+                    """,
+                    (discord_user_id, game.value, uid),
+                )
+                # Xóa các bản ghi đổi lỗi AUTH_REQUIRED để cho phép quét và đổi lại
+                await conn.execute(
+                    """
+                    DELETE FROM giftcode_redemptions
+                    WHERE account_id IN (SELECT id FROM accounts WHERE discord_user_id = ? AND game = ? AND uid = ?)
+                      AND status = 'AUTH_REQUIRED'
+                    """,
+                    (discord_user_id, game.value, uid),
+                )
 
             await conn.commit()
             return SessionModel(
@@ -116,6 +127,35 @@ class SessionRepository:
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
             )
+
+    @staticmethod
+    async def get_all_sessions() -> List[SessionModel]:
+        """Lấy toàn bộ session đã lưu (dùng cho tác vụ tự gia hạn token).
+
+        Không lọc theo cờ automation: dù người dùng tắt một tính năng nào đó thì
+        cookie vẫn cần được giữ sống để lần bật lại không phải đăng nhập lại.
+        """
+        async with db.get_connection() as conn:
+            cursor = await conn.execute(
+                "SELECT id, discord_user_id, game, uid, cookie_encrypted, session_status, "
+                "last_auth_check, created_at, updated_at FROM sessions ORDER BY id"
+            )
+            rows = await cursor.fetchall()
+
+        return [
+            SessionModel(
+                id=row["id"],
+                discord_user_id=row["discord_user_id"],
+                game=GameType(row["game"]),
+                uid=row["uid"],
+                cookie_encrypted=row["cookie_encrypted"],
+                session_status=row["session_status"],
+                last_auth_check=row["last_auth_check"],
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
+            )
+            for row in rows
+        ]
 
     @staticmethod
     async def get_decrypted_cookie(session: SessionModel) -> str:

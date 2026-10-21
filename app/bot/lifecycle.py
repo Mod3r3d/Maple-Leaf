@@ -4,6 +4,7 @@ import discord
 from loguru import logger
 from app.automation.manager import automation_manager
 from app.automation.notifications import notification_service
+from app.bot.health_server import health_server
 from app.config import settings
 from app.db.database import db
 from app.integrations.enka_client import enka_client
@@ -27,11 +28,16 @@ async def on_startup(bot: discord.Client | None = None):
     # Khởi động Background Scheduler cho Automation v2
     automation_manager.start()
 
+    # Khởi động Health Check Web Server (nếu chạy trên Render / Cloud có PORT)
+    await health_server.start(bot)
+
 
 async def on_shutdown():
     """Giải phóng tài nguyên khi bot dừng."""
     logger.info("Đang đóng các kết nối và dừng bot...")
+    await health_server.stop()
     automation_manager.stop()
     await enka_client.close()
     await db.close()
     logger.info("Đã dọn dẹp tài nguyên an toàn.")
+

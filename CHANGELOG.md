@@ -7,6 +7,19 @@ phiên bản theo [Semantic Versioning](https://semver.org/lang/vi/).
 ## [Unreleased]
 
 ### Added
+- **Triển khai 1-Click lên Render.com (`render.yaml`):** file Blueprint chuẩn giúp người dùng dễ dàng deploy bot lên Render chỉ bằng 1 nút bấm trực tiếp từ repo GitHub.
+- **Health Check Web Server nội bộ:** tự động kích hoạt khi có biến môi trường `PORT` (mặc định trên Render là 10000), cung cấp endpoint `/healthz`, `/ping` và trang web trạng thái 24/7, kết hợp với UptimeRobot để giữ bot online vĩnh viễn trên gói Free.
+- **Tài liệu hướng dẫn Render:** [`docs/DEPLOY_RENDER.md`](docs/DEPLOY_RENDER.md) hướng dẫn chi tiết từ A-Z cách đưa bot lên Render và giữ online 24/7.
+- **Trình khởi chạy 1-Click:** thêm `run.bat` (Windows) và `run.sh` (Linux/macOS) ngay tại thư mục gốc — tự động cài đặt môi trường ảo `.venv`, tạo `.env` và chạy bot chỉ bằng 1 thao tác click đúp chuột.
+- **Lệnh `/auto login`:** đăng nhập HoYoLAB bằng email + mật khẩu ngay trong Discord (modal),
+
+  bot tự lấy `stoken` + `ltoken_v2` + `cookie_token_v2` và lưu cho mọi tài khoản. Mật khẩu không
+  lưu, không ghi log; giới hạn 3 lần/10 phút mỗi người. Nếu HoYo yêu cầu captcha/mã email, bot
+  báo rõ để chuyển sang script local.
+- **Đăng nhập một lần:** tác vụ nền `TokenRefreshTask` tự gia hạn `cookie_token`/`ltoken_v2` bằng
+  `stoken` cho mọi phiên (mặc định 12 giờ/lần, chạy ngay sau khi khởi động) và lưu bản mới vào CSDL.
+  Cấu hình: `TOKEN_REFRESH_ENABLED`, `TOKEN_REFRESH_INTERVAL_HOURS`. Thêm lựa chọn
+  `/auto run tac_vu: Gia hạn token ngay` để chạy thủ công.
 - **Giấy phép MIT** (`LICENSE`) — dự án chính thức mở cho cộng đồng sử dụng, sửa và phân phối.
 - `requirements.in` + `requirements.txt` **ghim cứng phiên bản** (kèm environment marker cho gói
   chỉ dành Windows) để mọi người cài ra đúng bộ thư viện đã kiểm thử.
@@ -23,6 +36,8 @@ phiên bản theo [Semantic Versioning](https://semver.org/lang/vi/).
   `pyproject.toml`, `requirements-dev.txt`.
 
 ### Changed
+- `scripts/get_full_cookie.py`: **tự nhận diện Discord User ID** khi CSDL chỉ có một người dùng,
+  và **không in cookie ra màn hình** mặc định (thêm `--print-cookie` nếu cần).
 - **Đổi tên dự án:** Chính thức đổi tên bot và dự án thành **Maple Leaf** — áp dụng nhất quán cho
   tên class (`MapleLeaf`), CSDL (`data/mapleleaf.db`), file log (`logs/mapleleaf.log`), tài liệu,
   link clone và cấu hình Docker.

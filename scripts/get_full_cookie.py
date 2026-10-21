@@ -7,12 +7,17 @@ Vì sao cần script này?
       Chỉ endpoint đăng nhập **app HoYoLAB** mới trả về `stoken` — script này dùng đúng nó.
 
 Cách chạy (trên máy đang chạy bot):
+    .venv/Scripts/python.exe scripts/get_full_cookie.py
+
+    Script tự nhận diện Discord User ID nếu CSDL chỉ có một người dùng.
+    Nếu có nhiều người, chỉ định rõ:
     .venv/Scripts/python.exe scripts/get_full_cookie.py --discord-user-id <ID_DISCORD>
 
 Tuỳ chọn:
     --game {all,genshin,hsr}   Chỉ áp dụng cho một game (mặc định: all)
     --uid <UID>                Chỉ áp dụng cho một tài khoản cụ thể
     --no-save                  Chỉ in cookie ra màn hình, không ghi vào CSDL
+    --print-cookie             In đầy đủ chuỗi cookie (mặc định ẩn để tránh lộ token)
 
 An toàn:
     - Mật khẩu được nhập ẩn (getpass) và KHÔNG bao giờ được lưu lại.
@@ -83,6 +88,46 @@ async def login_and_build_cookie(account: str, password: str) -> str:
     return build_cookie_string(cookies)
 
 
+async def resolve_discord_user_id(provided: int | None) -> int | None:
+    """Xác định Discord user ID: dùng tham số, hoặc tự nhận diện nếu CSDL chỉ có 1 người."""
+    if provided:
+        return provided
+
+    await db.connect()
+    try:
+        async with db.get_connection() as conn:
+            cursor = await conn.execute(
+                "SELECT DISTINCT discord_user_id FROM accounts ORDER BY discord_user_id"
+            )
+            rows = [r["discord_user_id"] for r in await cursor.fetchall()]
+    finally:
+        await db.close()
+
+    if not rows:
+        logger.error(
+            "CSDL chưa có tài khoản game nào. Hãy dùng /account add trong Discord trước, "
+            "rồi chạy lại script này."
+        )
+        return None
+
+    if len(rows) == 1:
+        print(f"ℹ️  Tự nhận diện Discord User ID: {rows[0]}")
+        return rows[0]
+
+    print("CSDL có nhiều người dùng:")
+    for index, user_id in enumerate(rows, start=1):
+        print(f"  {index}. {user_id}")
+
+    choice = input("Chọn số thứ tự (hoặc nhập trực tiếp Discord User ID): ").strip()
+    if choice.isdigit() and 1 <= int(choice) <= len(rows):
+        return rows[int(choice) - 1]
+    if choice.isdigit():
+        return int(choice)
+
+    logger.error("Lựa chọn không hợp lệ.")
+    return None
+
+
 async def save_to_database(discord_user_id: int, cookie_str: str, game: str, uid: int | None) -> int:
     """Ghi cookie vào bảng sessions của bot. Trả về số tài khoản đã cập nhật."""
     await db.connect()
@@ -125,16 +170,33 @@ async def main() -> None:
     parser = argparse.ArgumentParser(
         description="Lấy cookie HoYoLAB đầy đủ (có stoken) để Đổi Giftcode chạy bền vững."
     )
-    parser.add_argument("--discord-user-id", type=int, required=True, help="ID Discord của bạn (chủ tài khoản)")
+    parser.add_argument(
+        "--discord-user-id",
+        type=int,
+        default=None,
+        help="ID Discord của bạn (bỏ trống nếu CSDL chỉ có một người dùng — script tự nhận diện)",
+    )
     parser.add_argument("--game", choices=["all", "genshin", "hsr"], default="all", help="Áp dụng cho game nào")
     parser.add_argument("--uid", type=int, default=None, help="Chỉ áp dụng cho UID cụ thể")
     parser.add_argument("--no-save", action="store_true", help="Chỉ in cookie, không ghi vào CSDL")
+    parser.add_argument(
+        "--print-cookie",
+        action="store_true",
+        help="In đầy đủ chuỗi cookie ra màn hình (mặc định: ẩn để tránh lộ token)",
+    )
     args = parser.parse_args()
 
     print("=" * 64)
     print(" LẤY COOKIE HOYOLAB ĐẦY ĐỦ (CÓ STOKEN) — Maple Leaf")
     print("=" * 64)
     print("Mật khẩu chỉ dùng để đăng nhập một lần và KHÔNG được lưu lại.\n")
+
+    discord_user_id = None
+    if not args.no_save:
+        discord_user_id = await resolve_discord_user_id(args.discord_user_id)
+        if discord_user_id is None:
+            return
+        print()
 
     account = input("Email / tên đăng nhập HoYoLAB: ").strip()
     if not account:
@@ -161,17 +223,21 @@ async def main() -> None:
         return
 
     print("\n" + "-" * 64)
-    print("CHUỖI COOKIE ĐẦY ĐỦ (dán vào /auto session_add nếu muốn dùng thủ công):")
+    if args.print_cookie or args.no_save:
+        print("CHUỖI COOKIE ĐẦY ĐỦ (dán vào /auto session_add nếu muốn dùng thủ công):")
+        print("-" * 64)
+        print(cookie_str)
+    else:
+        print("Đã nhận cookie đầy đủ (có `stoken`).")
+        print("Chuỗi cookie được ẩn để tránh lộ token — thêm `--print-cookie` nếu bạn cần xem.")
     print("-" * 64)
-    print(cookie_str)
-    print("-" * 64)
-    print("⚠️  TUYỆT ĐỐI không chia sẻ chuỗi này cho bất kỳ ai.\n")
+    print("⚠️  TUYỆT ĐỐI không chia sẻ cookie cho bất kỳ ai.\n")
 
     if args.no_save:
         print("Đã bỏ qua bước ghi CSDL (--no-save).")
         return
 
-    count = await save_to_database(args.discord_user_id, cookie_str, args.game, args.uid)
+    count = await save_to_database(discord_user_id, cookie_str, args.game, args.uid)
     if count:
         print(f"✅ Đã lưu cookie (kèm stoken) vào CSDL cho {count} tài khoản.")
         print("👉 Vào Discord chạy `/auto verify` để kiểm tra, rồi `/auto run tac_vu: Đổi Giftcode ngay`.")

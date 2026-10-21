@@ -31,7 +31,8 @@ automation layer** (daily check-in, gift codes, Mimo tasks, web events) with **e
 - **Automatic gift code redemption** — scans multiple code sources and redeems for your accounts.
 - **Mimo tasks** and **Accompany check-in**.
 - **Web event notifications** for both games.
-- `/auto status`, `/auto toggle`, `/auto session_add`, `/auto verify`, `/auto run`, `/auto history`.
+- **Log in once** — tokens are auto-renewed via `stoken` every 12 hours, no more cookie pasting.
+- `/auto status`, `/auto toggle`, `/auto login`, `/auto session_add`, `/auto verify`, `/auto run`, `/auto history`.
 
 ### 🔐 Security
 - HoYoLAB cookies are **encrypted with Fernet (symmetric)** before being stored.
@@ -39,28 +40,40 @@ automation layer** (daily check-in, gift codes, Mimo tasks, web events) with **e
 - Users can opt in/out and **revoke their session** at any time.
 - Read [`SECURITY.md`](SECURITY.md) before deploying publicly.
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+## ☁️ Deploy 24/7 to Render (Recommended)
+
+You can deploy the bot to [Render.com](https://render.com) for **24/7 free hosting** in just a few clicks:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+1. Click the **Deploy to Render** button above (or create a Blueprint from your GitHub repository on Render Dashboard).
+2. Enter your **`DISCORD_TOKEN`**.
+3. The bot comes with a built-in **Health Check Server** (`/healthz` on port `10000`), which Render detects and runs immediately.
+4. 👉 See the step-by-step guide on how to keep the bot alive 24/7 with UptimeRobot: [`docs/DEPLOY_RENDER.md`](docs/DEPLOY_RENDER.md).
+
 ---
 
-## 🚀 Quick start
+## 🚀 Quick start on PC
 
 ### Requirements
-- **Python 3.12+**
+- **Python 3.12+** ([Download from python.org](https://www.python.org/downloads/))
 - A Discord bot (create one at the [Discord Developer Portal](https://discord.com/developers/applications))
 - **Both privileged intents enabled**: `SERVER MEMBERS` and `MESSAGE CONTENT`.
 
-### Option 1 — Automated setup script (recommended)
+### Option 1 — 1-Click Automated (Easiest)
 
-```bash
-# Windows
-scripts\setup.bat
+After downloading or cloning the repo:
 
-# Linux / macOS
-bash scripts/setup.sh
-```
+- **On Windows**: Simply double-click **`run.bat`** in the root directory.
+  *(It will automatically create the virtual environment `.venv`, install all dependencies, create `.env`, and prompt you to enter your token).*
+- **On Linux / macOS**: Run:
+  ```bash
+  bash run.sh
+  ```
 
-The script creates the virtual environment, installs dependencies and creates `.env` for you.
-
-### Option 2 — Manual
+### Option 2 — Manual command line
 
 ```bash
 git clone https://github.com/Mod3r3d/Maple-Leaf.git
@@ -73,41 +86,20 @@ pip install -r requirements.txt
 cp .env.example .env             # Windows: copy .env.example .env
 ```
 
-### Configuration
-
 Open `.env` and set at least `DISCORD_TOKEN`:
-
 ```env
 DISCORD_TOKEN=your_bot_token_here
 ```
 
-Everything else has sensible defaults. Full reference:
-
-| Variable | Default | Description |
-|---|---|---|
-| `DISCORD_TOKEN` | *(required)* | Discord bot token |
-| `DATABASE_PATH` | `data/mapleleaf.db` | SQLite database path |
-| `DATABASE_URL` | *(empty)* | Use PostgreSQL instead of SQLite |
-| `AUTOMATION_ENABLED` | `True` | Enable/disable the whole background layer |
-| `AUTOMATION_MODE` | `live` | `live` = real API calls, `dry-run` = simulate only |
-| `ENCRYPTION_KEY` | *(auto-generated)* | Fernet key used to encrypt cookies |
-| `TIMEZONE` | `Asia/Ho_Chi_Minh` | Timezone for scheduled jobs |
-| `ADMIN_USER_IDS` | *(empty)* | Comma-separated Discord IDs allowed to use `/admin` |
-| `GENSHIN_EMOJI` / `HSR_EMOJI` | *(empty)* | Custom server emoji (defaults to Unicode) |
-
-> See [`.env.example`](.env.example) for the complete list with explanations.
-
-### Run the bot
-
+Run the bot:
 ```bash
 python -m app.main
 ```
 
-Once online, use `/auto session_add` in Discord to link your HoYoLAB cookie.
-
 ---
 
 ## 🐳 Docker
+
 
 ```bash
 cp .env.example .env      # then fill in DISCORD_TOKEN
@@ -128,10 +120,11 @@ is **not** present in browser cookies.
 Quick path:
 
 ```bash
-.venv/Scripts/python.exe scripts/get_full_cookie.py --discord-user-id <YOUR_DISCORD_ID>
+.venv/Scripts/python.exe scripts/get_full_cookie.py
 ```
 
-Then run `/auto verify` in Discord to confirm.
+The script auto-detects your Discord user ID when the database has only one user
+(use `--discord-user-id <ID>` otherwise). Then run `/auto verify` in Discord to confirm.
 
 ---
 

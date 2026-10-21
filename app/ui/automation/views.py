@@ -1,7 +1,18 @@
 """UI Views và Modals tương tác cho tính năng Automation v2."""
 
+import time
+
 import discord
+import genshin
 from discord.ui import Button, Modal, Select, TextInput, View, button
+from loguru import logger
+from app.automation.login import (
+    LoginError,
+    LoginNeedsCaptcha,
+    LoginNeedsEmailCode,
+    LoginTimeout,
+    login_with_app,
+)
 from app.automation.manager import automation_manager
 from app.db.repositories.accounts import AccountRepository
 from app.db.repositories.automation import (
@@ -10,6 +21,24 @@ from app.db.repositories.automation import (
 )
 from app.games.enums import GameType
 from app.security.encryption import inspect_cookie_tokens, mask_cookie
+
+# Giới hạn số lần thử đăng nhập để tránh dò mật khẩu qua Discord.
+_LOGIN_ATTEMPTS: dict[int, list[float]] = {}
+LOGIN_RATE_LIMIT = 3
+LOGIN_RATE_WINDOW_SECONDS = 600
+
+
+def _is_login_rate_limited(discord_user_id: int) -> bool:
+    """Trả về True nếu người dùng đã thử quá nhiều lần trong cửa sổ thời gian."""
+    now = time.monotonic()
+    attempts = [t for t in _LOGIN_ATTEMPTS.get(discord_user_id, []) if now - t < LOGIN_RATE_WINDOW_SECONDS]
+    if len(attempts) >= LOGIN_RATE_LIMIT:
+        _LOGIN_ATTEMPTS[discord_user_id] = attempts
+        return True
+
+    attempts.append(now)
+    _LOGIN_ATTEMPTS[discord_user_id] = attempts
+    return False
 
 
 class CookieInputModal(Modal, title="Thêm / Cập Nhật Cookie HoYoLAB"):
@@ -114,6 +143,128 @@ class CookieInputModal(Modal, title="Thêm / Cập Nhật Cookie HoYoLAB"):
         )
         embed.set_footer(text="Hệ thống luôn mã hóa bảo mật toàn bộ dữ liệu Cookie.")
         await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
+class LoginModal(Modal, title="Đăng Nhập HoYoLAB"):
+    """Đăng nhập bằng email + mật khẩu để bot tự lấy cookie đầy đủ (có `stoken`).
+
+    Mật khẩu chỉ dùng một lần, không lưu vào CSDL và không ghi log.
+    """
+
+    email = TextInput(
+        label="Email / tên đăng nhập",
+        placeholder="email@example.com",
+        required=True,
+        max_length=100,
+    )
+    password = TextInput(
+        label="Mật khẩu (không lưu lại)",
+        placeholder="Mật khẩu hiện rõ khi gõ — tránh dùng nơi có người khác nhìn màn hình",
+        required=True,
+        max_length=128,
+    )
+
+    def __init__(self, discord_user_id: int):
+        super().__init__()
+        self.discord_user_id = discord_user_id
+
+    async def on_submit(self, interaction: discord.Interaction):
+        # Đăng nhập có thể mất vài giây → phải defer trước khi gọi mạng.
+        await interaction.response.defer(ephemeral=True, thinking=True)
+
+        if _is_login_rate_limited(self.discord_user_id):
+            await interaction.followup.send(
+                "⏳ Bạn đã thử đăng nhập quá nhiều lần. Vui lòng thử lại sau 10 phút.",
+                ephemeral=True,
+            )
+            return
+
+        accounts = await AccountRepository.get_accounts_by_user(self.discord_user_id)
+        if not accounts:
+            await interaction.followup.send(
+                "❌ Bạn chưa có tài khoản game nào. Hãy dùng `/account add` trước.",
+                ephemeral=True,
+            )
+            return
+
+        email = self.email.value.strip()
+        password = self.password.value
+
+        try:
+            cookies = await login_with_app(email, password)
+        except LoginNeedsCaptcha as exc:
+            await interaction.followup.send(f"⚠️ {exc}", ephemeral=True)
+            return
+        except LoginNeedsEmailCode as exc:
+            await interaction.followup.send(f"⚠️ {exc}", ephemeral=True)
+            return
+        except LoginTimeout as exc:
+            await interaction.followup.send(f"⏱️ {exc}", ephemeral=True)
+            return
+        except genshin.errors.AccountLoginFail:
+            await interaction.followup.send(
+                "❌ Sai mật khẩu. Nếu bạn đăng nhập HoYoLAB bằng Google/Facebook/Apple, "
+                "hãy đặt mật khẩu tại `account.hoyolab.com` → Account Security trước.",
+                ephemeral=True,
+            )
+            return
+        except genshin.errors.AccountDoesNotExist:
+            await interaction.followup.send("❌ Email/tên đăng nhập không tồn tại.", ephemeral=True)
+            return
+        except genshin.errors.VerificationCodeRateLimited:
+            await interaction.followup.send(
+                "⏳ Bạn đã yêu cầu mã xác minh quá nhiều lần. Thử lại sau.", ephemeral=True
+            )
+            return
+        except LoginError as exc:
+            await interaction.followup.send(f"⚠️ {exc}", ephemeral=True)
+            return
+        except Exception as exc:  # noqa: BLE001
+            # Không log email/mật khẩu — chỉ log loại lỗi.
+            logger.exception(f"Đăng nhập HoYoLAB thất bại cho user {self.discord_user_id}: {type(exc).__name__}")
+            await interaction.followup.send(
+                "❌ Đăng nhập thất bại. Hãy thử lại, hoặc dùng `scripts/get_full_cookie.py` trên máy tính.",
+                ephemeral=True,
+            )
+            return
+        finally:
+            # Xoá mật khẩu khỏi bộ nhớ sớm nhất có thể.
+            password = ""
+
+        raw_cookie = "; ".join(f"{k}={v}" for k, v in cookies.items() if v)
+        saved_names = []
+        for acc in accounts:
+            await SessionRepository.save_session(
+                discord_user_id=self.discord_user_id,
+                game=acc.game,
+                uid=acc.uid,
+                raw_cookie=raw_cookie,
+            )
+            await AutomationSettingsRepository.get_or_create(acc.id, self.discord_user_id)
+            saved_names.append(f"{acc.game.emoji} **{acc.game.display_name}** (`{acc.uid}`)")
+
+        analysis = inspect_cookie_tokens(raw_cookie)
+        embed = discord.Embed(
+            title="✅ Đăng Nhập HoYoLAB Thành Công",
+            description=(
+                "Đã lấy cookie đầy đủ (có `stoken`) và lưu cho:\n• "
+                + "\n• ".join(saved_names)
+                + "\n\n⚡ Bot sẽ **tự gia hạn token 12 giờ/lần** — bạn không phải đăng nhập lại.\n"
+                "👉 Chạy `/auto verify` để kiểm tra khả năng đổi Giftcode."
+            ),
+            color=0x2ECC71,
+        )
+        if not analysis.get("redeem_durable"):
+            embed.add_field(
+                name="⚠️ Chưa đủ bộ tự gia hạn",
+                value=(
+                    "Không thấy đủ `stoken` + `ltmid_v2`. Điểm danh vẫn dùng được, nhưng Đổi Giftcode "
+                    "có thể hết hạn. Hãy dùng `scripts/get_full_cookie.py` để lấy cookie đầy đủ."
+                ),
+                inline=False,
+            )
+        embed.set_footer(text="Mật khẩu chỉ dùng một lần và không được lưu lại.")
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
 
 class AutomationDashboardView(View):

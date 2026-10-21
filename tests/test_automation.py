@@ -2,9 +2,13 @@
 
 import unittest
 from datetime import datetime
+from unittest.mock import AsyncMock, patch
+
+from app.automation.client import HoyoClientAdapter
 from app.automation.manager import automation_manager
 from app.automation.tasks.checkin_task import DailyCheckinTask
 from app.automation.tasks.giftcode_tasks import GiftcodeDiscoveryTask, GiftcodeRedeemTask
+from app.automation.tasks.token_refresh_task import TokenRefreshTask
 from app.automation.tasks.web_event_task import WebEventMonitorTask
 from app.config import settings
 from app.db.repositories.accounts import AccountRepository
@@ -340,6 +344,49 @@ class TestPersistentQueueAndRedeemService(TempDatabaseMixin, unittest.IsolatedAs
         status, msg = await RedeemService.redeem_for_account(fake_acc, "GENSHINGIFT")
         self.assertEqual(status, "AUTH_REQUIRED")
         self.assertIn("Chưa liên kết Cookie", msg)
+
+
+class TestTokenRefreshTask(TempDatabaseMixin, unittest.IsolatedAsyncioTestCase):
+    """Kiểm tra tác vụ giữ token sống — cơ chế "đăng nhập một lần"."""
+
+    async def asyncSetUp(self):
+        await self._open_temp_db()
+
+    async def asyncTearDown(self):
+        await self._close_temp_db()
+
+    async def test_no_sessions_is_success(self):
+        result = await TokenRefreshTask().execute()
+        self.assertEqual(result["status"], "SUCCESS")
+        self.assertIn("Chưa có phiên", result["message"])
+
+    async def test_session_without_stoken_is_skipped(self):
+        await SessionRepository.save_session(
+            discord_user_id=111222333,
+            game=GameType.GENSHIN,
+            uid=800000001,
+            raw_cookie="ltuid_v2=111222333; ltoken_v2=v2_abc; cookie_token_v2=v2_xyz;",
+        )
+
+        result = await TokenRefreshTask().execute()
+        self.assertEqual(result["refreshed"], 0)
+        self.assertEqual(result["missing_stoken"], 1)
+        self.assertIn("stoken", result["message"])
+
+    async def test_session_with_stoken_is_refreshed(self):
+        await SessionRepository.save_session(
+            discord_user_id=444555666,
+            game=GameType.HSR,
+            uid=800000002,
+            raw_cookie="ltuid_v2=444555666; ltmid_v2=mid123; stoken=v2_stoken; cookie_token_v2=v2_old;",
+        )
+
+        with patch.object(HoyoClientAdapter, "try_refresh_tokens", new=AsyncMock(return_value=True)):
+            result = await TokenRefreshTask().execute()
+
+        self.assertEqual(result["refreshed"], 1)
+        self.assertEqual(result["failed"], 0)
+        self.assertEqual(result["status"], "SUCCESS")
 
 
 if __name__ == "__main__":

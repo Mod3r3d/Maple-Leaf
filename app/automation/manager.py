@@ -1,6 +1,7 @@
 """Trình quản lý lịch trình và điều phối tác vụ tự động hóa (AutomationManager)."""
 
 import asyncio
+from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -9,6 +10,7 @@ from loguru import logger
 from app.automation.tasks.checkin_task import DailyCheckinTask
 from app.automation.tasks.giftcode_tasks import GiftcodeDiscoveryTask, GiftcodeRedeemTask
 from app.automation.tasks.mimo_accompany_tasks import AccompanyTask, MimoTask
+from app.automation.tasks.token_refresh_task import TokenRefreshTask
 from app.automation.tasks.web_event_task import WebEventMonitorTask
 from app.config import settings
 
@@ -102,6 +104,23 @@ class AutomationManager:
             replace_existing=True,
         )
 
+        # 5. Tự gia hạn token HoYoLAB (đăng nhập một lần, dùng lâu dài)
+        # `cookie_token` đổi Giftcode chỉ sống vài giờ, nên phải làm mới định kỳ
+        # bằng `stoken` trước khi nó hết hạn.
+        if settings.TOKEN_REFRESH_ENABLED:
+            token_task = TokenRefreshTask()
+            self.scheduler.add_job(
+                self._safe_run_task,
+                IntervalTrigger(hours=max(1, settings.TOKEN_REFRESH_INTERVAL_HOURS)),
+                args=[token_task],
+                id="job_token_refresh",
+                name="Tự Gia Hạn Token HoYoLAB",
+                jitter=120,
+                # Chạy ngay sau khi bot khởi động (chờ 45 giây cho DB sẵn sàng)
+                next_run_time=datetime.now(self.scheduler.timezone) + timedelta(seconds=45),
+                replace_existing=True,
+            )
+
         self.scheduler.start()
         self._running = True
         logger.info(f"Đã kích hoạt Background Scheduler (Chế độ: {settings.AUTOMATION_MODE}, Múi giờ: {settings.TIMEZONE})")
@@ -122,6 +141,7 @@ class AutomationManager:
             "mimo": MimoTask(),
             "accompany": AccompanyTask(),
             "events": WebEventMonitorTask(),
+            "token_refresh": TokenRefreshTask(),
         }
 
         task = task_map.get(task_name)

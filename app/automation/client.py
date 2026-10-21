@@ -162,6 +162,8 @@ class HoyoClientAdapter:
                         game=self.game,
                         uid=self.uid,
                         raw_cookie=new_raw,
+                        # Gia hạn định kỳ chỉ cập nhật cookie, không mở lại job lỗi
+                        reopen_failed_jobs=False,
                     )
                 logger.info(f"Đã làm mới và lưu token đổi mã thành công cho UID {self.uid}!")
                 return True

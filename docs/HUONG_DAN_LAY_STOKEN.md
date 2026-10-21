@@ -3,6 +3,40 @@
 > Mục đích: lấy `stoken` để bot tự gia hạn `cookie_token` — nhờ đó tính năng
 > Đổi Giftcode (Auto Redeem) chạy mãi mà không cần dán lại cookie.
 
+## 0. Cách nhanh nhất — đăng nhập một lần (khuyến nghị)
+
+Có **2 cách**, dùng cách nào cũng chỉ đăng nhập một lần:
+
+**Cách 1 — ngay trong Discord:** `/auto login` → nhập email + mật khẩu vào cửa sổ hiện ra.
+Bot tự lấy `stoken` và lưu cookie cho mọi tài khoản của bạn.
+
+> ⚠️ Cách này **không xử lý được captcha / mã xác minh email** (2 bước này phải làm trên máy
+> chạy bot). Nếu gặp, bot sẽ báo rõ và bạn chuyển sang Cách 2.
+
+**Cách 2 — script trên máy tính (xử lý được mọi trường hợp):**
+
+```bash
+.venv/Scripts/python.exe scripts/get_full_cookie.py
+```
+
+Nhập email + mật khẩu **một lần** (ẩn, không lưu). Script đăng nhập qua endpoint
+**app HoYoLAB**, lấy `stoken` + `ltoken_v2` + `cookie_token_v2` rồi **ghi thẳng vào CSDL của bot**.
+
+Sau đó bot tự chạy tác vụ **Tự Gia Hạn Token** (mặc định 12 giờ/lần, chạy ngay 45 giây
+sau khi khởi động) để xin `cookie_token` mới và lưu lại. Bạn **không phải dán lại cookie**
+cho tới khi `stoken` bị thu hồi (đăng xuất mọi thiết bị / đổi mật khẩu).
+
+Kiểm tra nhanh trong Discord:
+- `/auto verify` → phải hiện ✅
+- `/auto run tac_vu: Gia hạn token ngay` → chạy thủ công nếu muốn
+
+Tắt/bật cơ chế này trong `.env`:
+
+```env
+TOKEN_REFRESH_ENABLED=True
+TOKEN_REFRESH_INTERVAL_HOURS=12
+```
+
 ---
 
 ## 1. Vì sao cần `stoken`?
@@ -102,11 +136,12 @@ chỉ đăng nhập **app** (`login_with_app_password`) mới có. Đó là lý 
 Mở terminal tại thư mục dự án và chạy:
 
 ```bash
-.venv/Scripts/python.exe scripts/get_full_cookie.py --discord-user-id <ID_DISCORD_CUA_BAN>
+.venv/Scripts/python.exe scripts/get_full_cookie.py
 ```
 
-- `<ID_DISCORD_CUA_BAN>`: ID Discord của bạn (bật Developer Mode trong Discord → chuột phải
-  vào tên mình → Copy User ID).
+Script **tự nhận diện Discord User ID** khi CSDL chỉ có một người dùng. Nếu có nhiều người,
+script sẽ liệt kê để bạn chọn (hoặc chỉ định rõ `--discord-user-id <ID>`).
+
 - Tuỳ chọn: `--game {all,genshin,hsr}`, `--uid <UID>`, `--no-save` (chỉ in cookie, không ghi CSDL).
 
 Script sẽ hỏi email/tên đăng nhập và mật khẩu (ẩn khi gõ). Nếu HoYo yêu cầu **captcha**, một

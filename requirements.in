@@ -27,10 +27,11 @@ asyncpg>=0.29.0
 alembic>=1.13.1
 greenlet>=3.0.0
 
-# Bảo mật
+# Bảo mật & Mã hoá
 cryptography>=42.0.0
+rsa>=4.9
 
-# API HoYoLAB
+# API HoYoLAB (bao gồm đăng nhập app password)
 genshin>=1.7.0
 
 # Lịch chạy nền

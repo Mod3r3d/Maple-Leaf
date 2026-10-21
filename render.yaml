@@ -1,0 +1,31 @@
+# ═══════════════════════════════════════════════════════════════
+#  Maple Leaf — Render Blueprint (render.yaml)
+#  Triển khai 1-Click từ GitHub lên Render (https://render.com)
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  - type: web
+    name: maple-leaf
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: singapore
+    branch: main
+    healthCheckPath: /healthz
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: DATABASE_PATH
+        value: data/mapleleaf.db
+      - key: AUTOMATION_ENABLED
+        value: "true"
+      - key: AUTOMATION_MODE
+        value: "live"
+      - key: TIMEZONE
+        value: "Asia/Ho_Chi_Minh"
+      - key: GENSHIN_EMOJI
+        value: "<:genshin_icon:1559743970727301200>"
+      - key: HSR_EMOJI
+        value: "<:hsr_icon:1559743975764791436>"
+      - key: PORT
+        value: "10000"

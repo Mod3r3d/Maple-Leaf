@@ -44,12 +44,22 @@ class Settings(BaseSettings):
     MIMO_SCAN_INTERVAL_MINUTES: int = 60
     WEB_EVENT_SCAN_INTERVAL_MINUTES: int = 120
 
+    # Tự gia hạn token (giúp người dùng CHỈ CẦN ĐĂNG NHẬP MỘT LẦN).
+    # Khi cookie có `stoken`, bot định kỳ lấy `cookie_token` mới (token đổi mã chỉ
+    # sống vài giờ) và lưu lại vào CSDL, nên không bao giờ phải dán lại cookie.
+    TOKEN_REFRESH_ENABLED: bool = True
+    TOKEN_REFRESH_INTERVAL_HOURS: int = 12
+
     # Rate Limiting & Concurrency
     MAX_CONCURRENT_AUTOMATION_TASKS: int = 5
     PROVIDER_REQUEST_DELAY_SECONDS: float = 1.5
 
     # Admin Discord User IDs (danh sách ID cách nhau bởi dấu phẩy, ví dụ: "12345678,87654321")
     ADMIN_USER_IDS: str = ""
+
+    # Health Check Web Server (tự động kích hoạt khi có PORT trên Render / Cloud PaaS)
+    PORT: Optional[int] = None
+    HEALTH_HOST: str = "0.0.0.0"
 
     # Embed Colors
     GENSHIN_COLOR: int = 0x5BC0BE  # Xanh ngọc Genshin

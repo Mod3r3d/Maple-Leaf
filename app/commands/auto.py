@@ -14,7 +14,12 @@ from app.db.repositories.automation import (
 )
 from app.games.enums import GameType
 from app.security.encryption import inspect_cookie_tokens
-from app.ui.automation.views import AutomationDashboardView, CookieInputModal, build_cookie_view_embed
+from app.ui.automation.views import (
+    AutomationDashboardView,
+    CookieInputModal,
+    LoginModal,
+    build_cookie_view_embed,
+)
 
 
 class AutoCommands(commands.GroupCog, group_name="auto"):
@@ -142,6 +147,20 @@ class AutoCommands(commands.GroupCog, group_name="auto"):
             ephemeral=True,
         )
 
+    @app_commands.command(
+        name="login",
+        description="Đăng nhập HoYoLAB bằng email + mật khẩu để bot tự lấy cookie đầy đủ (có stoken)",
+    )
+    async def auto_login(self, interaction: discord.Interaction):
+        accounts = await AccountRepository.get_accounts_by_user(interaction.user.id)
+        if not accounts:
+            await interaction.response.send_message(
+                "Bạn chưa có tài khoản nào. Hãy dùng `/account add` trước.", ephemeral=True
+            )
+            return
+
+        await interaction.response.send_modal(LoginModal(discord_user_id=interaction.user.id))
+
     @app_commands.command(name="session_add", description="Mở cửa sổ thêm/cập nhật Cookie HoYoLAB an toàn")
     @app_commands.describe(
         ap_dung="Chọn phạm vi áp dụng Cookie (mặc định áp dụng chung cho tất cả tài khoản game)"
@@ -209,6 +228,7 @@ class AutoCommands(commands.GroupCog, group_name="auto"):
             app_commands.Choice(name="Nhiệm vụ Mimo", value="mimo"),
             app_commands.Choice(name="Điểm danh Đồng Hành", value="accompany"),
             app_commands.Choice(name="Quét Sự Kiện Web mới", value="events"),
+            app_commands.Choice(name="Gia hạn token ngay (giữ đăng nhập)", value="token_refresh"),
         ]
     )
     async def auto_run_cmd(self, interaction: discord.Interaction, tac_vu: app_commands.Choice[str]):

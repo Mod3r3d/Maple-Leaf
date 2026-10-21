@@ -55,9 +55,17 @@ class GameType(str, Enum):
 
     @property
     def icon_url(self) -> str:
+        """URL icon chính thức của game (ưu tiên Discord CDN từ emoji tuỳ biến nếu có, fallback URL chuẩn)."""
+        raw = self.emoji
+        match = _CUSTOM_EMOJI_RE.match(raw)
+        if match:
+            animated, _, emoji_id = match.groups()
+            ext = "gif" if animated else "png"
+            return f"https://cdn.discordapp.com/emojis/{emoji_id}.{ext}"
         if self == GameType.GENSHIN:
-            return "https://enka.network/ui/UI_AvatarIcon_Paimon.png"
-        return "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/avatar/1001.png"
+            return "https://cdn.discordapp.com/emojis/1559743970727301200.png"
+        return "https://cdn.discordapp.com/emojis/1559743975764791436.png"
+
 
 
 class ServerRegion(str, Enum):

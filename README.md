@@ -6,11 +6,13 @@
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
 **Maple Leaf** là bot Discord viết bằng Python, chuyên cho **Genshin Impact** và **Honkai: Star Rail**.
 Bot có kiến trúc phân tầng, giao diện **100% tiếng Việt**, thẻ ảnh (card) đồ hoạ bằng Pillow, và
 **lớp tự động hoá chạy nền** (điểm danh, giftcode, Mimo, sự kiện web) với cookie được **mã hoá**.
 
-> 🌐 English version: [`README.en.md`](README.en.md)
+> 🌐 English version: [`README.en.md`](README.en.md) | ☁️ Hướng dẫn Render: [`docs/DEPLOY_RENDER.md`](docs/DEPLOY_RENDER.md)
 
 ---
 
@@ -27,7 +29,8 @@ Bot có kiến trúc phân tầng, giao diện **100% tiếng Việt**, thẻ �
 - **Tự động đổi Giftcode** — tự quét mã mới từ nhiều nguồn và đổi cho tài khoản của bạn.
 - **Nhiệm vụ Mimo** và **Điểm danh Đồng hành**.
 - **Thông báo sự kiện web** của cả hai game.
-- `/auto status`, `/auto toggle`, `/auto session_add`, `/auto verify`, `/auto run`, `/auto history`.
+- **Đăng nhập một lần** — bot tự gia hạn token bằng `stoken` (12 giờ/lần), không phải dán lại cookie.
+- `/auto status`, `/auto toggle`, `/auto login`, `/auto session_add`, `/auto verify`, `/auto run`, `/auto history`.
 
 ### 🔐 Bảo mật
 - Cookie HoYoLAB được **mã hoá đối xứng Fernet** trước khi lưu CSDL.
@@ -37,26 +40,38 @@ Bot có kiến trúc phân tầng, giao diện **100% tiếng Việt**, thẻ �
 
 ---
 
-## 🚀 Cài đặt nhanh
+## ☁️ Triển khai 24/7 lên Render (Khuyên dùng)
 
-### Yêu cầu
-- **Python 3.12+**
-- Một bot Discord (tạo tại [Discord Developer Portal](https://discord.com/developers/applications))
-- **Bật cả 2 Privileged Intent** cho bot: `SERVER MEMBERS` và `MESSAGE CONTENT`.
+Bạn có thể đưa bot lên hoạt động **24/7** miễn phí trên [Render.com](https://render.com) cực kỳ dễ dàng:
 
-### Cách 1 — Script tự động (khuyến nghị)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
-```bash
-# Windows
-scripts\setup.bat
+1. Bấm nút **Deploy to Render** ở trên (hoặc tạo Blueprint từ GitHub Repo của bạn trên Render Dashboard).
+2. Điền **`DISCORD_TOKEN`** của bạn.
+3. Bot được tích hợp sẵn **Health Check Server** (`/healthz` trên cổng `10000`), Render sẽ nhận diện và chạy ngay lập tức!
+4. 👉 Xem hướng dẫn chi tiết cách dùng UptimeRobot giữ bot chạy mãi mãi: [`docs/DEPLOY_RENDER.md`](docs/DEPLOY_RENDER.md).
 
-# Linux / macOS
-bash scripts/setup.sh
-```
+---
 
-Script sẽ tự tạo môi trường ảo, cài thư viện và tạo file `.env` cho bạn.
+## 🚀 Cài đặt & Chạy trên máy tính (Rất dễ)
 
-### Cách 2 — Làm thủ công
+### Yêu cầu ban đầu
+- **Python 3.12+** ([Tải Python tại python.org](https://www.python.org/downloads/)) — *Lưu ý tích chọn "Add python.exe to PATH" khi cài đặt*.
+- Một bot Discord (tạo tại [Discord Developer Portal](https://discord.com/developers/applications)).
+- **Bật 2 Privileged Intent** cho bot: `SERVER MEMBERS` và `MESSAGE CONTENT` trong tab Bot.
+
+### Cách 1 — 1-Click Tự Động (Nhanh nhất cho người mới)
+
+Sau khi tải dự án về (Download ZIP hoặc `git clone`):
+
+- **Trên Windows**: Nhấp đúp chuột vào file **`run.bat`** ở thư mục gốc.
+  *(File sẽ tự động tạo môi trường ảo `.venv`, cài đặt mọi thư viện, tạo file `.env` và hướng dẫn bạn điền Token bot).*
+- **Trên Linux / macOS**: Chạy lệnh:
+  ```bash
+  bash run.sh
+  ```
+
+### Cách 2 — Chạy bằng dòng lệnh thủ công
 
 ```bash
 git clone https://github.com/Mod3r3d/Maple-Leaf.git
@@ -69,37 +84,15 @@ pip install -r requirements.txt
 cp .env.example .env             # Windows: copy .env.example .env
 ```
 
-### Cấu hình
-
 Mở `.env` và điền **tối thiểu** `DISCORD_TOKEN`:
-
 ```env
 DISCORD_TOKEN=token_bot_cua_ban
 ```
 
-Các biến khác đều có giá trị mặc định hợp lý. Danh sách đầy đủ:
-
-| Biến | Mặc định | Mô tả |
-|---|---|---|
-| `DISCORD_TOKEN` | *(bắt buộc)* | Token bot Discord |
-| `DATABASE_PATH` | `data/mapleleaf.db` | Đường dẫn CSDL SQLite |
-| `DATABASE_URL` | *(trống)* | Dùng PostgreSQL thay SQLite (nếu điền, bỏ qua `DATABASE_PATH`) |
-| `AUTOMATION_ENABLED` | `True` | Bật/tắt toàn bộ lớp chạy nền |
-| `AUTOMATION_MODE` | `live` | `live` = gọi API thật, `dry-run` = chỉ giả lập |
-| `ENCRYPTION_KEY` | *(tự sinh)* | Khoá Fernet mã hoá cookie |
-| `TIMEZONE` | `Asia/Ho_Chi_Minh` | Múi giờ cho lịch chạy nền |
-| `ADMIN_USER_IDS` | *(trống)* | ID Discord được dùng `/admin`, cách nhau bởi dấu phẩy |
-| `GENSHIN_EMOJI` / `HSR_EMOJI` | *(trống)* | Emoji tuỳ biến của server (mặc định dùng Unicode) |
-
-> Xem toàn bộ biến và giải thích trong [`.env.example`](.env.example).
-
-### Chạy bot
-
+Chạy bot:
 ```bash
 python -m app.main
 ```
-
-Khi bot online, dùng `/auto session_add` trong Discord để liên kết cookie HoYoLAB.
 
 ---
 
@@ -110,6 +103,7 @@ cp .env.example .env      # rồi điền DISCORD_TOKEN
 docker compose up -d --build
 docker compose logs -f
 ```
+
 
 ---
 
@@ -123,10 +117,11 @@ docker compose logs -f
 Cách nhanh nhất:
 
 ```bash
-.venv/Scripts/python.exe scripts/get_full_cookie.py --discord-user-id <ID_DISCORD_CUA_BAN>
+.venv/Scripts/python.exe scripts/get_full_cookie.py
 ```
 
-Sau đó vào Discord chạy `/auto verify` để kiểm tra.
+Script tự nhận diện Discord User ID nếu CSDL chỉ có một người dùng (nhiều người thì
+thêm `--discord-user-id <ID>`). Sau đó vào Discord chạy `/auto verify` để kiểm tra.
 
 ---
 
