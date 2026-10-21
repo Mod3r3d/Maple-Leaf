@@ -461,6 +461,7 @@ class HealthCheckServer:
                             body: JSON.stringify({{
                                 ...(mmt.session_id && {{ session_id: mmt.session_id }}),
                                 ...(mmt.check_id && {{ check_id: mmt.check_id }}),
+                                ...((mmt.captcha_id || mmt.gt) && {{ captcha_id: mmt.captcha_id || mmt.gt }}),
                                 ...validateData
                             }})
                         }}).then(res => {{
@@ -514,6 +515,13 @@ class HealthCheckServer:
         try:
             data = await request.json()
             mmt = session.mmt
+            if hasattr(mmt, "captcha_id") and "captcha_id" not in data:
+                data["captcha_id"] = getattr(mmt, "captcha_id", None)
+            if hasattr(mmt, "gt") and "captcha_id" not in data:
+                data["captcha_id"] = getattr(mmt, "gt", None)
+            if hasattr(mmt, "session_id") and "session_id" not in data:
+                data["session_id"] = getattr(mmt, "session_id", None)
+
             if isinstance(mmt, RiskyCheckMMT):
                 result = RiskyCheckMMTResult(**data)
             elif isinstance(mmt, SessionMMT):

@@ -61,18 +61,65 @@ def get_or_create_device_id() -> str:
 def patch_genshin_login() -> None:
     """Vá lỗi upstream của thư viện genshin.py:
 
-    Trong genshin/client/components/auth/client.py, sau khi giải xong Captcha gửi email
-    (mmt = await self._send_verification_email(result)), thư viện bỏ quên bước gọi lại
-    `await self._send_verification_email(result, mmt_result=mmt_result)`.
-    Điều này khiến HoYoLAB không bao giờ thực sự gửi email OTP về hòm thư người dùng!
+    1. Trong `_send_verification_email`, thư viện mặc định trả về `SessionMMT` (v3), gây lỗi
+       Pydantic ValidationError khi HoYoLAB trả về Geetest v4 (`use_v4: True`).
+    2. Sau khi giải xong Captcha gửi email (`mmt = await self._send_verification_email(result)`),
+       thư viện bỏ quên bước gọi lại `await self._send_verification_email(result, mmt_result=mmt_result)`.
+       Điều này khiến HoYoLAB không bao giờ thực sự gửi email OTP về hòm thư người dùng!
     """
+    import json
+    from typing import Union
+
+    from genshin import errors
+    from genshin.client import routes
     from genshin.client.components.auth import server
     from genshin.client.components.auth.client import AuthClient
+    from genshin.client.components.auth.subclients.app import AppAuthClient
     from genshin.models.auth.geetest import SessionMMT, SessionMMTv4
     from genshin.models.auth.verification import ActionTicket
+    from genshin.utility import auth as auth_utility
 
     if getattr(AuthClient, "_maple_leaf_patched", False):
         return
+
+    async def patched_send_verification_email(
+        self,
+        ticket: ActionTicket,
+        *,
+        mmt_result: Optional[Any] = None,
+    ) -> Union[None, SessionMMT, SessionMMTv4]:
+        """Gửi email xác minh có hỗ trợ Geetest v4."""
+        headers = {**auth_utility.EMAIL_SEND_HEADERS}
+        if mmt_result:
+            headers["x-rpc-aigis"] = mmt_result.to_aigis_header()
+
+        resp = await self.cookie_manager._raw_request(
+            "POST",
+            routes.SEND_VERIFICATION_CODE_URL.get_url(),
+            json={
+                "action_type": "verify_for_component",
+                "action_ticket": ticket.verify_str.ticket,
+            },
+            headers=headers,
+        )
+
+        if resp.data["retcode"] == -3101:
+            # Captcha triggered
+            aigis = json.loads(resp.headers["x-rpc-aigis"])
+            if isinstance(aigis.get("data"), str):
+                aigis["data"] = json.loads(aigis["data"])
+
+            if isinstance(aigis.get("data"), dict) and aigis["data"].get("use_v4"):
+                return SessionMMTv4(
+                    **aigis["data"],
+                    session_id=aigis.get("session_id", ""),
+                )
+            return SessionMMT(**aigis)
+
+        if resp.data["retcode"] != 0:
+            errors.raise_for_retcode(resp.data)
+
+        return None
 
     async def patched_login_with_app_password(
         self,
@@ -96,41 +143,48 @@ def patch_genshin_login() -> None:
             encrypted=encrypted,
         )
 
-        if isinstance(result, SessionMMT):
-            if geetest_solver:
-                mmt_result = await geetest_solver(result)
-            else:
-                mmt_result = await server.solve_geetest(result, port=port)
+        # Hỗ trợ giải Captcha (lặp lại tối đa 3 lần nếu HoYoLAB yêu cầu thêm thử thách)
+        for _ in range(3):
+            if isinstance(result, SessionMMT):
+                if geetest_solver:
+                    mmt_result = await geetest_solver(result)
+                else:
+                    mmt_result = await server.solve_geetest(result, port=port)
 
-            result = await self._app_login(
-                account,
-                password,
-                device_id=device_id,
-                device_name=device_name,
-                device_model=device_model,
-                encrypted=encrypted,
-                mmt_result=mmt_result,
-            )
-        elif isinstance(result, SessionMMTv4):
-            if geetest_solver:
-                mmt_result = await geetest_solver(result)
-            else:
-                mmt_result = await server.solve_geetest(
-                    result,
-                    port=port,
-                    for_new_os_app=True,
-                    api_server=server.HOYOLAB_GT_SERVER,
+                result = await self._app_login(
+                    account,
+                    password,
+                    device_id=device_id,
+                    device_name=device_name,
+                    device_model=device_model,
+                    encrypted=encrypted,
+                    mmt_result=mmt_result,
                 )
+            elif isinstance(result, SessionMMTv4):
+                if geetest_solver:
+                    mmt_result = await geetest_solver(result)
+                else:
+                    mmt_result = await server.solve_geetest(
+                        result,
+                        port=port,
+                        for_new_os_app=True,
+                        api_server=server.HOYOLAB_GT_SERVER,
+                    )
 
-            result = await self._app_login(
-                account,
-                password,
-                device_id=device_id,
-                device_name=device_name,
-                device_model=device_model,
-                encrypted=encrypted,
-                mmt_result=mmt_result,
-            )
+                result = await self._app_login(
+                    account,
+                    password,
+                    device_id=device_id,
+                    device_name=device_name,
+                    device_model=device_model,
+                    encrypted=encrypted,
+                    mmt_result=mmt_result,
+                )
+            else:
+                break
+
+        if isinstance(result, (SessionMMT, SessionMMTv4)):
+            raise LoginNeedsCaptcha("HoYoLAB yêu cầu giải Captcha nhiều lần. Vui lòng thử lại sau.")
 
         if isinstance(result, ActionTicket):
             # Email verification required
@@ -139,7 +193,15 @@ def patch_genshin_login() -> None:
                 if geetest_solver:
                     mmt_result = await geetest_solver(mmt)
                 else:
-                    mmt_result = await server.solve_geetest(mmt, port=port)
+                    if isinstance(mmt, SessionMMTv4):
+                        mmt_result = await server.solve_geetest(
+                            mmt,
+                            port=port,
+                            for_new_os_app=True,
+                            api_server=server.HOYOLAB_GT_SERVER,
+                        )
+                    else:
+                        mmt_result = await server.solve_geetest(mmt, port=port)
 
                 # VÁ LỖI UPSTREAM: Gọi lại _send_verification_email kèm mmt_result đã giải
                 # để HoYoLAB thực sự gửi email OTP chứa mã 6 số về hòm thư người dùng!
@@ -160,9 +222,11 @@ def patch_genshin_login() -> None:
 
         return result
 
+    AppAuthClient._send_verification_email = patched_send_verification_email
+    AuthClient._send_verification_email = patched_send_verification_email
     AuthClient.login_with_app_password = patched_login_with_app_password
     AuthClient._maple_leaf_patched = True
-    logger.debug("Đã áp dụng bản vá lỗi gửi email OTP HoYoLAB cho genshin.py.")
+    logger.debug("Đã áp dụng bản vá lỗi Geetest v4 và gửi email OTP HoYoLAB cho genshin.py.")
 
 
 # Kích hoạt bản vá ngay khi module được nạp
@@ -245,6 +309,12 @@ async def login_with_app(
         raise LoginError("Đã yêu cầu mã xác minh quá nhiều lần. Vui lòng chờ vài phút rồi thử lại.") from exc
     finally:
         auth_server.enter_code = original_enter_code
+
+    if not hasattr(result, "to_dict"):
+        raise LoginError(
+            f"Phản hồi không mong muốn từ HoYoLAB: {type(result).__name__}. "
+            "Vui lòng thử lại hoặc dùng `scripts/get_full_cookie.py` trên máy tính."
+        )
 
     cookies: Dict[str, str] = {k: v for k, v in dict(result.to_dict()).items() if v}
     if not cookies.get("stoken"):

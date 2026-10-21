@@ -335,6 +335,36 @@ class LoginModal(Modal, title="Đăng Nhập HoYoLAB"):
                 "⏳ Bạn đã yêu cầu mã xác minh quá nhiều lần. Hãy đợi vài phút rồi thử lại sau.", ephemeral=True
             )
             return
+        except genshin.errors.GeetestFailed:
+            await interaction.followup.send(
+                "❌ Xác thực Captcha không thành công hoặc đã hết hạn từ phía máy chủ HoYoLAB. "
+                "Vui lòng thử đăng nhập lại và kéo khớp hình ảnh cẩn thận.",
+                ephemeral=True,
+            )
+            return
+        except genshin.errors.AccountHasLocked:
+            await interaction.followup.send(
+                "❌ Tài khoản đã bị tạm khóa do nhập sai mật khẩu quá số lần cho phép. "
+                "Vui lòng đợi 20 phút rồi thử lại.",
+                ephemeral=True,
+            )
+            return
+        except genshin.errors.WrongOTP:
+            await interaction.followup.send(
+                "❌ Mã xác minh (OTP) không chính xác hoặc đã hết hạn. Hãy thử lại.",
+                ephemeral=True,
+            )
+            return
+        except genshin.errors.GenshinException as exc:
+            logger.exception(f"HoYoLAB API error cho user {self.discord_user_id}: {exc}")
+            ret = getattr(exc, "retcode", "ERR")
+            msg = getattr(exc, "msg", str(exc))
+            await interaction.followup.send(
+                f"❌ Lỗi từ HoYoLAB ([{ret}]: {msg}). "
+                "Hãy thử lại, hoặc dùng `scripts/get_full_cookie.py` trên máy tính.",
+                ephemeral=True,
+            )
+            return
         except LoginError as exc:
             await interaction.followup.send(f"⚠️ {exc}", ephemeral=True)
             return
@@ -342,7 +372,8 @@ class LoginModal(Modal, title="Đăng Nhập HoYoLAB"):
             # Không log email/mật khẩu — chỉ log loại lỗi.
             logger.exception(f"Đăng nhập HoYoLAB thất bại cho user {self.discord_user_id}: {type(exc).__name__}")
             await interaction.followup.send(
-                "❌ Đăng nhập thất bại. Hãy thử lại, hoặc dùng `scripts/get_full_cookie.py` trên máy tính.",
+                f"❌ Đăng nhập thất bại ({type(exc).__name__}: {str(exc)[:120]}). "
+                "Hãy thử lại, hoặc dùng `scripts/get_full_cookie.py` trên máy tính.",
                 ephemeral=True,
             )
             return
