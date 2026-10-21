@@ -37,10 +37,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import genshin  # noqa: E402
 from loguru import logger  # noqa: E402
 
+from app.automation.login import patch_genshin_login  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.db.database import db  # noqa: E402
 from app.db.repositories.accounts import AccountRepository  # noqa: E402
 from app.db.repositories.automation import SessionRepository  # noqa: E402
+
+patch_genshin_login()
 
 # Lưu device_id cố định để các lần đăng nhập sau ít bị hỏi mã xác minh email hơn.
 DEVICE_ID_FILE = settings.DATA_DIR / ".app_device_id"

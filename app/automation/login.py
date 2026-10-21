@@ -58,6 +58,117 @@ def get_or_create_device_id() -> str:
     return value
 
 
+def patch_genshin_login() -> None:
+    """Vá lỗi upstream của thư viện genshin.py:
+
+    Trong genshin/client/components/auth/client.py, sau khi giải xong Captcha gửi email
+    (mmt = await self._send_verification_email(result)), thư viện bỏ quên bước gọi lại
+    `await self._send_verification_email(result, mmt_result=mmt_result)`.
+    Điều này khiến HoYoLAB không bao giờ thực sự gửi email OTP về hòm thư người dùng!
+    """
+    from genshin.client.components.auth import server
+    from genshin.client.components.auth.client import AuthClient
+    from genshin.models.auth.geetest import SessionMMT, SessionMMTv4
+    from genshin.models.auth.verification import ActionTicket
+
+    if getattr(AuthClient, "_maple_leaf_patched", False):
+        return
+
+    async def patched_login_with_app_password(
+        self,
+        account: str,
+        password: str,
+        *,
+        device_id: Optional[str] = None,
+        device_name: Optional[str] = None,
+        device_model: Optional[str] = None,
+        encrypted: bool = False,
+        geetest_solver: Optional[Any] = None,
+        port: int = 5000,
+    ) -> Any:
+        device_id = device_id or self.generate_app_device_id()
+        result = await self._app_login(
+            account,
+            password,
+            device_id=device_id,
+            device_name=device_name,
+            device_model=device_model,
+            encrypted=encrypted,
+        )
+
+        if isinstance(result, SessionMMT):
+            if geetest_solver:
+                mmt_result = await geetest_solver(result)
+            else:
+                mmt_result = await server.solve_geetest(result, port=port)
+
+            result = await self._app_login(
+                account,
+                password,
+                device_id=device_id,
+                device_name=device_name,
+                device_model=device_model,
+                encrypted=encrypted,
+                mmt_result=mmt_result,
+            )
+        elif isinstance(result, SessionMMTv4):
+            if geetest_solver:
+                mmt_result = await geetest_solver(result)
+            else:
+                mmt_result = await server.solve_geetest(
+                    result,
+                    port=port,
+                    for_new_os_app=True,
+                    api_server=server.HOYOLAB_GT_SERVER,
+                )
+
+            result = await self._app_login(
+                account,
+                password,
+                device_id=device_id,
+                device_name=device_name,
+                device_model=device_model,
+                encrypted=encrypted,
+                mmt_result=mmt_result,
+            )
+
+        if isinstance(result, ActionTicket):
+            # Email verification required
+            mmt = await self._send_verification_email(result)
+            if mmt:
+                if geetest_solver:
+                    mmt_result = await geetest_solver(mmt)
+                else:
+                    mmt_result = await server.solve_geetest(mmt, port=port)
+
+                # VÁ LỖI UPSTREAM: Gọi lại _send_verification_email kèm mmt_result đã giải
+                # để HoYoLAB thực sự gửi email OTP chứa mã 6 số về hòm thư người dùng!
+                await self._send_verification_email(result, mmt_result=mmt_result)
+
+            code = await server.enter_code()
+            await self._verify_email(code, result)
+
+            result = await self._app_login(
+                account,
+                password,
+                device_id=device_id,
+                device_name=device_name,
+                device_model=device_model,
+                encrypted=encrypted,
+                ticket=result,
+            )
+
+        return result
+
+    AuthClient.login_with_app_password = patched_login_with_app_password
+    AuthClient._maple_leaf_patched = True
+    logger.debug("Đã áp dụng bản vá lỗi gửi email OTP HoYoLAB cho genshin.py.")
+
+
+# Kích hoạt bản vá ngay khi module được nạp
+patch_genshin_login()
+
+
 async def login_with_app(
     email: str,
     password: str,
