@@ -123,6 +123,25 @@ Kiểm tra bằng `/healthz`:
 | `bot_connected: false` | Chưa kết nối Discord (đang reconnect) | Đợi 10–30 giây, xem lại Logs |
 | `last_interaction_ago_seconds` rất lớn dù bạn vừa gõ lệnh | Lệnh không tới được bot | Service đang ngủ hoặc gateway đứt |
 | Uptime dài nhưng vẫn timeout | Event loop bị chặn hoặc CPU bị bóp | Xem Logs Render, kiểm tra tác vụ nặng |
+| Log báo `429 Too Many Requests` khi khởi động | Discord tạm chặn đăng nhập do quá nhiều lần login | Chờ 15–60 phút, chỉ chạy **một** instance, deploy lại |
+
+### Lỗi 429 Too Many Requests khi deploy
+
+Discord giới hạn số lần đăng nhập từ một IP/token trong thời gian ngắn. Nguyên nhân thường gặp:
+
+- **Chạy bot ở 2 nơi cùng lúc** (máy local + Render) với cùng token → hai phiên gateway đá nhau,
+  bot reconnect liên tục → bị chặn.
+- Deploy/restart nhiều lần liên tiếp.
+- IP egress dùng chung của Render Free đang bị đánh dấu.
+
+Cách xử lý:
+
+1. **Tắt mọi instance local** (đóng cửa sổ `run.bat` / tiến trình `python -m app.main`).
+2. Chờ **15–60 phút** cho lệnh chặn hết hạn.
+3. Vào Render → **Manual Deploy → Deploy latest commit**.
+
+Bot đã có sẵn cơ chế **tự thử lại 5 lần** (30s → 60s → 120s → 240s → 300s) khi gặp 429, và
+Health Check được mở **trước khi đăng nhập** nên Render không đánh dấu deploy thất bại trong lúc chờ.
 
 Các nguyên nhân khác cần xem trong **Render → Logs**:
 - **Deploy/restart**: mỗi lần deploy, bot mất 20–60 giây để sẵn sàng.

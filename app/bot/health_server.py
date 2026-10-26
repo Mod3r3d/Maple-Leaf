@@ -593,6 +593,11 @@ class HealthCheckServer:
     async def start(self, bot: Optional[discord.Client] = None):
         """Khởi động web server cho Health Check và Cổng giải Captcha."""
         self._bot = bot
+        # Có thể được gọi sớm từ main() trước khi đăng nhập, rồi gọi lại trong
+        # on_startup — chỉ mở cổng một lần.
+        if self._runner is not None:
+            return
+
         port = settings.PORT
         if not port:
             logger.info("PORT không được đặt — bot chạy ở chế độ Worker thuần (không mở cổng HTTP).")
