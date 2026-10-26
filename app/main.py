@@ -33,8 +33,9 @@ async def start_bot_with_retry(
     bot: MapleLeaf,
     token: str,
     *,
-    max_attempts: int = 5,
+    max_attempts: int = 15,
     base_delay: float = 30.0,
+    max_delay: float = 300.0,
 ) -> None:
     """Đăng nhập bot, tự thử lại khi Discord trả 429 (global rate limit).
 
@@ -42,18 +43,28 @@ async def start_bot_with_retry(
     (đặc biệt khi vừa chạy bot ở máy khác với cùng token). Nếu để tiến trình thoát,
     Render sẽ đánh dấu deploy thất bại. Thay vào đó ta chờ theo cấp số nhân rồi thử lại.
 
-    Chỉ thử lại với 429; các lỗi khác (token sai, mất mạng...) được ném ra ngay.
+    Tổng thời gian chờ mặc định ~1 giờ (30s → 60s → 120s → 240s → 300s × 10), đủ để
+    Discord gỡ chặn toàn cục. Chỉ thử lại với 429; lỗi khác (token sai, mất mạng...) ném ra ngay.
     """
     for attempt in range(1, max_attempts + 1):
         try:
             await bot.start(token)
             return
         except Exception as exc:  # noqa: BLE001
-            is_rate_limited = getattr(exc, "status", None) == 429
-            if not is_rate_limited or attempt == max_attempts:
+            if getattr(exc, "status", None) != 429:
                 raise
 
-            delay = min(300.0, base_delay * (2 ** (attempt - 1)))
+            # Mỗi lần login thất bại, discord.py đã tạo một ClientSession mới.
+            # Đóng lại để tránh "Unclosed client session" và rò rỉ kết nối.
+            try:
+                await bot.http.close()
+            except Exception:  # noqa: BLE001
+                pass
+
+            if attempt == max_attempts:
+                raise
+
+            delay = min(max_delay, base_delay * (2 ** (attempt - 1)))
             logger.warning(
                 f"Discord đang tạm chặn đăng nhập (429 Too Many Requests). "
                 f"Thử lại lần {attempt + 1}/{max_attempts} sau {delay:.0f} giây..."

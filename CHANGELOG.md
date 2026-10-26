@@ -7,9 +7,10 @@ phiên bản theo [Semantic Versioning](https://semver.org/lang/vi/).
 ## [Unreleased]
 
 ### Added
-- **Chống lỗi 429 khi khởi động:** bot tự thử lại đăng nhập 5 lần với backoff luỹ thừa
-  (30s → 300s) thay vì thoát ngay; Health Check được mở **trước khi đăng nhập** nên Render
-  không đánh dấu deploy thất bại trong lúc chờ Discord hết chặn.
+- **Chống lỗi 429 khi khởi động:** bot tự thử lại đăng nhập 15 lần với backoff luỹ thừa
+  (30s → 300s, tổng ~1 giờ) thay vì thoát ngay; Health Check được mở **trước khi đăng nhập**
+  nên Render không đánh dấu deploy thất bại trong lúc chờ Discord hết chặn. Đóng HTTP session
+  giữa các lần thử để tránh cảnh báo "Unclosed client session".
 - **Chẩn đoán "Ứng dụng không phản hồi":** `/healthz` trả thêm `uptime_seconds`, `started_at`,
   `gateway_latency_ms`, `guild_count`, `last_interaction_at` và cờ `recently_restarted`; trang chủ
   hiển thị uptime và badge phản ánh đúng trạng thái kết nối Discord.

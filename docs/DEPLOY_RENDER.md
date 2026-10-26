@@ -140,8 +140,9 @@ Cách xử lý:
 2. Chờ **15–60 phút** cho lệnh chặn hết hạn.
 3. Vào Render → **Manual Deploy → Deploy latest commit**.
 
-Bot đã có sẵn cơ chế **tự thử lại 5 lần** (30s → 60s → 120s → 240s → 300s) khi gặp 429, và
-Health Check được mở **trước khi đăng nhập** nên Render không đánh dấu deploy thất bại trong lúc chờ.
+Bot đã có sẵn cơ chế **tự thử lại 15 lần** (30s → 60s → 120s → 240s → 300s, tổng ~1 giờ) khi gặp
+429, và Health Check được mở **trước khi đăng nhập** nên Render không đánh dấu deploy thất bại
+trong lúc chờ. Bạn không cần làm gì thêm — chỉ cần **không deploy lại liên tục**.
 
 Các nguyên nhân khác cần xem trong **Render → Logs**:
 - **Deploy/restart**: mỗi lần deploy, bot mất 20–60 giây để sẵn sàng.
