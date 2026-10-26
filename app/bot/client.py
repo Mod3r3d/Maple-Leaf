@@ -7,6 +7,7 @@ from discord.ext import commands
 from loguru import logger
 
 from app.bot.error_handler import on_app_command_error
+from app.bot.health_server import health_server
 from app.bot.lifecycle import on_shutdown, on_startup
 
 EXTENSIONS: List[str] = [
@@ -43,6 +44,13 @@ class MapleLeaf(commands.Bot):
 
         # 2. Đăng ký Global Error Handler cho Command Tree
         self.tree.on_error = on_app_command_error
+
+        # 2b. Ghi nhận thời điểm tương tác gần nhất (phục vụ chẩn đoán /healthz)
+        async def _record_interaction(interaction: discord.Interaction) -> bool:
+            health_server.mark_interaction()
+            return True
+
+        self.tree.interaction_check = _record_interaction
 
         # 3. Nạp các module lệnh
         for ext in EXTENSIONS:

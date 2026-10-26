@@ -7,6 +7,11 @@ phiên bản theo [Semantic Versioning](https://semver.org/lang/vi/).
 ## [Unreleased]
 
 ### Added
+- **Chẩn đoán "Ứng dụng không phản hồi":** `/healthz` trả thêm `uptime_seconds`, `started_at`,
+  `gateway_latency_ms`, `guild_count`, `last_interaction_at` và cờ `recently_restarted`; trang chủ
+  hiển thị uptime và badge phản ánh đúng trạng thái kết nối Discord.
+- **Tự giữ thức (keep-alive):** bot tự ping `/healthz` mỗi 10 phút khi có `RENDER_EXTERNAL_URL`,
+  tránh bị Render Free cho "ngủ". Cấu hình: `KEEPALIVE_ENABLED`, `KEEPALIVE_INTERVAL_MINUTES`.
 - **Triển khai 1-Click lên Render.com (`render.yaml`):** file Blueprint chuẩn giúp người dùng dễ dàng deploy bot lên Render chỉ bằng 1 nút bấm trực tiếp từ repo GitHub.
 - **Health Check Web Server nội bộ:** tự động kích hoạt khi có biến môi trường `PORT` (mặc định trên Render là 10000), cung cấp endpoint `/healthz`, `/ping` và trang web trạng thái 24/7, kết hợp với UptimeRobot để giữ bot online vĩnh viễn trên gói Free.
 - **Tài liệu hướng dẫn Render:** [`docs/DEPLOY_RENDER.md`](docs/DEPLOY_RENDER.md) hướng dẫn chi tiết từ A-Z cách đưa bot lên Render và giữ online 24/7.

@@ -3,6 +3,7 @@
 import asyncio
 import time
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 import aiohttp
@@ -46,6 +47,14 @@ class HealthCheckServer:
         self._bot: Optional[discord.Client] = None
         self._captcha_sessions: Dict[str, CaptchaSession] = {}
         self._gt_cache: Dict[str, bytes] = {}
+        # Dùng để chẩn đoán service bị "ngủ" / khởi động lại trên Render.
+        self.started_at: float = time.time()
+        self.last_interaction_at: Optional[float] = None
+        self._keepalive_task: Optional[asyncio.Task] = None
+
+    def mark_interaction(self) -> None:
+        """Ghi nhận thời điểm bot vừa nhận một tương tác từ Discord."""
+        self.last_interaction_at = time.time()
 
     def register_captcha_session(
         self,
@@ -75,13 +84,36 @@ class HealthCheckServer:
         self._captcha_sessions.pop(session_id, None)
 
     async def _handle_healthz(self, request: web.Request) -> web.Response:
-        """Endpoint kiểm tra sức khoẻ cho Render / Cloud PaaS."""
+        """Endpoint kiểm tra sức khoẻ cho Render / Cloud PaaS.
+
+        Ngoài trạng thái kết nối, endpoint trả về `uptime_seconds` để phát hiện
+        service vừa bị "ngủ"/khởi động lại — nguyên nhân phổ biến khiến lệnh
+        Slash báo "Ứng dụng không phản hồi" trên gói Render Free.
+        """
         is_ready = bool(self._bot and self._bot.is_ready())
+        now = time.time()
+        uptime = max(0.0, now - self.started_at)
+        latency_ms = round(self._bot.latency * 1000, 1) if self._bot and self._bot.latency else None
+
         return web.json_response({
             "status": "ok",
             "app": "Maple Leaf",
             "bot_connected": is_ready,
             "active_captcha_sessions": len(self._captcha_sessions),
+            "uptime_seconds": int(uptime),
+            "started_at": datetime.fromtimestamp(self.started_at, tz=timezone.utc).isoformat(),
+            "gateway_latency_ms": latency_ms,
+            "guild_count": len(self._bot.guilds) if self._bot else 0,
+            "last_interaction_at": (
+                datetime.fromtimestamp(self.last_interaction_at, tz=timezone.utc).isoformat()
+                if self.last_interaction_at
+                else None
+            ),
+            "last_interaction_ago_seconds": (
+                int(now - self.last_interaction_at) if self.last_interaction_at else None
+            ),
+            # Uptime < 2 phút: service vừa khởi động lại (ngủ hoặc deploy lại).
+            "recently_restarted": uptime < 120,
         })
 
     async def _handle_ping(self, request: web.Request) -> web.Response:
@@ -89,9 +121,22 @@ class HealthCheckServer:
 
     async def _handle_root(self, request: web.Request) -> web.Response:
         """Trang thông tin trực quan hiển thị trạng thái bot 24/7."""
+        is_ready = bool(self._bot and self._bot.is_ready())
         bot_user = str(self._bot.user) if self._bot and self._bot.user else "Đang kết nối Discord..."
         guilds = len(self._bot.guilds) if self._bot else 0
         latency = round(self._bot.latency * 1000, 1) if self._bot and self._bot.latency else 0.0
+
+        uptime_seconds = int(max(0, time.time() - self.started_at))
+        hours, remainder = divmod(uptime_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        uptime_text = f"{hours}h {minutes}m" if hours else f"{minutes}m {seconds}s"
+
+        # Badge phản ánh trạng thái THẬT, tránh hiển thị "24/7" khi bot đang mất kết nối.
+        badge_text = "Dịch Vụ Đang Hoạt Động" if is_ready else "Bot Đang Kết Nối Lại..."
+        badge_bg = "rgba(16, 185, 129, 0.15)" if is_ready else "rgba(245, 158, 11, 0.15)"
+        badge_fg = "#34d399" if is_ready else "#fbbf24"
+        badge_border = "rgba(16, 185, 129, 0.3)" if is_ready else "rgba(245, 158, 11, 0.3)"
+        dot_color = "#10b981" if is_ready else "#f59e0b"
 
         html = f"""<!DOCTYPE html>
 <html lang="vi">
@@ -197,9 +242,9 @@ class HealthCheckServer:
 </head>
 <body>
     <div class="card">
-        <div class="badge">
-            <div class="badge-dot"></div>
-            <span>Dịch Vụ Đang Hoạt Động 24/7</span>
+        <div class="badge" style="background: {badge_bg}; color: {badge_fg}; border-color: {badge_border};">
+            <div class="badge-dot" style="background: {dot_color}; box-shadow: 0 0 10px {dot_color};"></div>
+            <span>{badge_text}</span>
         </div>
         <h1>🍁 Maple Leaf</h1>
         <p class="subtitle">Trợ thủ Discord cho Genshin Impact &amp; Honkai: Star Rail</p>
@@ -224,7 +269,7 @@ class HealthCheckServer:
         </div>
 
         <div class="footer">
-            Maple Leaf Bot &bull; Triển khai trên Render / Cloud &bull; <a href="/healthz">Kiểm tra API JSON</a>
+            Maple Leaf Bot &bull; Uptime: {uptime_text} &bull; Triển khai trên Render / Cloud &bull; <a href="/healthz">Kiểm tra API JSON</a>
         </div>
     </div>
 </body>
@@ -571,13 +616,61 @@ class HealthCheckServer:
             self._site = web.TCPSite(self._runner, settings.HEALTH_HOST, int(port))
             await self._site.start()
             logger.info(f"Đã mở Health Check & Captcha Portal tại http://{settings.HEALTH_HOST}:{port}/ (Render / Cloud)")
+            self._start_keepalive()
         except OSError as e:
             logger.warning(f"Cổng {port} đang bận hoặc không thể mở Web Server ({e}). Sẽ chạy ở chế độ dự phòng.")
         except Exception as e:
             logger.exception(f"Không thể khởi động Health Check Web Server trên port {port}: {e}")
 
+    def _start_keepalive(self) -> None:
+        """Tự ping `/healthz` định kỳ để Render Free không đưa service vào trạng thái ngủ.
+
+        Chỉ hoạt động khi Render cung cấp biến `RENDER_EXTERNAL_URL` (Web Service).
+        Đây là giải pháp thay thế UptimeRobot, không cần dịch vụ bên ngoài.
+        """
+        if not settings.KEEPALIVE_ENABLED:
+            return
+
+        base_url = (settings.RENDER_EXTERNAL_URL or settings.PUBLIC_URL or "").strip().rstrip("/")
+        if not base_url:
+            return
+
+        if self._keepalive_task and not self._keepalive_task.done():
+            return
+
+        self._keepalive_task = asyncio.create_task(self._keepalive_loop(base_url))
+        logger.info(
+            f"Đã bật tự giữ thức (keep-alive): ping {base_url}/healthz "
+            f"mỗi {settings.KEEPALIVE_INTERVAL_MINUTES} phút."
+        )
+
+    async def _keepalive_loop(self, base_url: str) -> None:
+        interval = max(1, settings.KEEPALIVE_INTERVAL_MINUTES) * 60
+        await asyncio.sleep(interval)
+        while True:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(
+                        f"{base_url}/healthz", timeout=aiohttp.ClientTimeout(total=10)
+                    ) as resp:
+                        await resp.read()
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:  # noqa: BLE001
+                logger.debug(f"Keep-alive ping thất bại: {e}")
+            await asyncio.sleep(interval)
+
     async def stop(self):
         """Dọn dẹp web server khi bot tắt."""
+        if self._keepalive_task:
+            self._keepalive_task.cancel()
+            try:
+                await self._keepalive_task
+            except (asyncio.CancelledError, Exception):  # noqa: BLE001
+                pass
+            finally:
+                self._keepalive_task = None
+
         if self._runner:
             try:
                 await self._runner.cleanup()

@@ -63,6 +63,10 @@ class Settings(BaseSettings):
     RENDER_EXTERNAL_URL: Optional[str] = None
     PUBLIC_URL: Optional[str] = None
 
+    # Tự ping /healthz để Render Free không cho service "ngủ" (chỉ chạy khi có URL công khai)
+    KEEPALIVE_ENABLED: bool = True
+    KEEPALIVE_INTERVAL_MINUTES: int = 10
+
     @property
     def web_base_url(self) -> str:
         """URL công khai của web server để người dùng mở trang giải Captcha."""

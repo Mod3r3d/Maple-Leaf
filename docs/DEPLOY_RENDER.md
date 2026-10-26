@@ -57,11 +57,27 @@ Nếu bạn muốn tạo thủ công từng bước thay vì dùng Blueprint:
 
 ---
 
-## ⏰ Giữ bot online 24/7 vĩnh viễn trên gói Free (UptimeRobot)
+## ⏰ Giữ bot online 24/7 vĩnh viễn trên gói Free
 
-Gói **Free** của Render sẽ tự động đưa Web Service vào trạng thái "ngủ" (Sleep / Spin down) nếu sau 15 phút không có yêu cầu HTTP nào gửi đến.
+Gói **Free** của Render sẽ tự động đưa Web Service vào trạng thái "ngủ" (Sleep / Spin down) nếu sau 15 phút không có yêu cầu HTTP nào gửi đến. Khi ngủ, bot **ngắt kết nối Discord**, nên lệnh Slash sẽ báo *"Ứng dụng không phản hồi"*.
 
-Nhờ bot đã được tích hợp sẵn **Health Check Server** (`/healthz`), bạn có thể dùng dịch vụ giám sát miễn phí [UptimeRobot](https://uptimerobot.com) để ping bot định kỳ, giúp bot **hoạt động liên tục 24/7 mà không bao giờ bị ngủ**:
+### Cách 1 — Tự giữ thức (đã tích hợp sẵn, không cần làm gì)
+
+Bot tự gửi một request tới `https://<ten-app>.onrender.com/healthz` mỗi **10 phút** (đọc từ biến `RENDER_EXTERNAL_URL` do Render cấp). Miễn service đang chạy, nó sẽ không bị ngủ.
+
+Tùy chỉnh trong **Environment Variables** của Render nếu cần:
+
+```env
+KEEPALIVE_ENABLED=True
+KEEPALIVE_INTERVAL_MINUTES=10
+```
+
+> Lưu ý: cơ chế này **không đánh thức** được service đã ngủ (process bị đóng băng). Nếu service
+> đã ngủ, lần gõ lệnh đầu tiên vẫn thất bại — hãy mở link web để đánh thức, sau đó bot tự giữ thức.
+
+### Cách 2 — Dùng dịch vụ bên ngoài (dự phòng, chắc chắn hơn)
+
+Dùng [UptimeRobot](https://uptimerobot.com) ping định kỳ — hoạt động kể cả khi service đã ngủ:
 
 1. Đăng ký tài khoản miễn phí tại [UptimeRobot.com](https://uptimerobot.com).
 2. Bấm **Add New Monitor**:
@@ -73,7 +89,45 @@ Nhờ bot đã được tích hợp sẵn **Health Check Server** (`/healthz`), 
      ```
    - **Monitoring Interval**: Chọn `5 minutes` (hoặc `10 minutes`).
 3. Bấm **Create Monitor**.
-4. Xong! Cứ 5 phút một lần UptimeRobot sẽ gửi tín hiệu HTTP nhẹ tới bot, giữ cho bot luôn luôn thức và hoạt động 24/7 trên Discord.
+
+> Nên dùng **cả hai**: Cách 1 giữ service thức từ bên trong, Cách 2 đánh thức được từ bên ngoài.
+
+---
+
+## 🩺 Chẩn đoán lỗi "Ứng dụng không phản hồi"
+
+Discord chỉ hiện thông báo này khi bot **không trả lời trong 3 giây**. Trên Render, nguyên nhân
+thường gặp nhất là **service đang ngủ** (đã bị spin down) — lúc đó bot đã ngắt kết nối Discord nên
+không nhận được lệnh. Mở link web sẽ đánh thức service, nhưng lệnh vừa gõ **không được chạy lại**.
+
+Kiểm tra bằng `/healthz`:
+
+```json
+{
+  "status": "ok",
+  "bot_connected": true,
+  "uptime_seconds": 842,
+  "started_at": "2026-10-26T01:20:00+00:00",
+  "gateway_latency_ms": 242.3,
+  "guild_count": 1,
+  "last_interaction_at": "2026-10-26T01:31:05+00:00",
+  "last_interaction_ago_seconds": 20,
+  "recently_restarted": false
+}
+```
+
+| Dấu hiệu | Ý nghĩa | Cách xử lý |
+|---|---|---|
+| `uptime_seconds` nhỏ (vài phút) mỗi lần kiểm tra | Service liên tục bị ngủ/khởi động lại | Bật UptimeRobot như mục trên |
+| `recently_restarted: true` | Vừa khởi động lại < 2 phút | Đợi bot kết nối lại rồi thử lệnh |
+| `bot_connected: false` | Chưa kết nối Discord (đang reconnect) | Đợi 10–30 giây, xem lại Logs |
+| `last_interaction_ago_seconds` rất lớn dù bạn vừa gõ lệnh | Lệnh không tới được bot | Service đang ngủ hoặc gateway đứt |
+| Uptime dài nhưng vẫn timeout | Event loop bị chặn hoặc CPU bị bóp | Xem Logs Render, kiểm tra tác vụ nặng |
+
+Các nguyên nhân khác cần xem trong **Render → Logs**:
+- **Deploy/restart**: mỗi lần deploy, bot mất 20–60 giây để sẵn sàng.
+- **Hết RAM (512 MB ở gói Free)**: tác vụ vẽ ảnh (Pillow) có thể làm service bị OOM-kill.
+- **Crash do thiếu biến môi trường**: kiểm tra `DISCORD_TOKEN` đã được điền trong Render chưa.
 
 ---
 
